@@ -1,0 +1,28 @@
+# Core LangChain split packages
+langchain
+langchain-openai
+langchain-community
+langchain-text-splitters
+
+# Vector store
+faiss-cpu
+
+# Document loaders/parsers
+pypdf
+docx2txt
+unstructured
+unstructured[pptx]
+unstructured[docx]
+unstructured[pdf]
+
+# Env vars
+python-dotenv
+
+pydantic-settings>=2.0.3
+
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Tooling / tests
+pytest
