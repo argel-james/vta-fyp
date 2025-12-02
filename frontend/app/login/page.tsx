@@ -9,15 +9,23 @@ import { Mail } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
+import { useAuth } from "@/context/auth-context"
+import * as authService from "@/lib/auth-service"
+import type { Role } from "@/context/auth-context"
+
 export default function LoginPage() {
   const router = useRouter()
+  const { status, user, login } = useAuth()
   const [step, setStep] = useState<"email" | "otp">("email")
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [infoMessage, setInfoMessage] = useState("")
   const [countdown, setCountdown] = useState(0)
   const [isRegistering, setIsRegistering] = useState(false)
+  const [role, setRole] = useState<Role>("student")
+  const [division, setDivision] = useState("")
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -33,6 +41,20 @@ export default function LoginPage() {
     return () => clearInterval(timer)
   }, [countdown])
 
+  useEffect(() => {
+    if (status === "authenticated" && user) {
+      router.replace(user.role === "professor" ? "/professor" : "/student")
+    }
+  }, [status, user, router])
+
+  useEffect(() => {
+    if (isRegistering) {
+      setStep("email")
+      setOtp("")
+      setCountdown(0)
+    }
+  }, [isRegistering])
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) return
@@ -40,12 +62,13 @@ export default function LoginPage() {
     try {
       setLoading(true)
       setError("")
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      setInfoMessage("")
+      const message = await authService.requestOtp(email)
       setStep("otp")
       setCountdown(60)
+      setInfoMessage(message)
     } catch (err) {
-      setError("Failed to send OTP. Please try again.")
+      setError(err instanceof Error ? err.message : "Failed to send OTP. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -57,11 +80,12 @@ export default function LoginPage() {
     try {
       setLoading(true)
       setError("")
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      router.push("/student")
+      setInfoMessage("")
+      const session = await authService.verifyOtp(email, otp)
+      login(session)
+      router.replace(session.role === "professor" ? "/professor" : "/student")
     } catch (err) {
-      setError("Invalid OTP")
+      setError(err instanceof Error ? err.message : "Invalid OTP")
     } finally {
       setLoading(false)
     }
@@ -72,11 +96,29 @@ export default function LoginPage() {
     try {
       setLoading(true)
       setError("")
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const message = await authService.requestOtp(email)
       setCountdown(60)
+      setInfoMessage(message)
     } catch (err) {
-      setError("Failed to resend OTP")
+      setError(err instanceof Error ? err.message : "Failed to resend OTP")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email) return
+    try {
+      setLoading(true)
+      setError("")
+      const message = await authService.submitRegistration(email, role, division || undefined)
+      setInfoMessage(message)
+      setEmail("")
+      setDivision("")
+      setRole("student")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit registration")
     } finally {
       setLoading(false)
     }
@@ -102,7 +144,7 @@ export default function LoginPage() {
 
             <div className="relative z-10 animate-pulse-subtle">
               <Image
-                src="/images/image.png"
+                src="/images/ntulogo.png"
                 alt="NTU Logo"
                 width={400}
                 height={400}
@@ -123,7 +165,7 @@ export default function LoginPage() {
           <div className="w-full max-w-sm space-y-6">
             {/* Title */}
             <div className="flex flex-col items-center justify-center space-y-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent text-center uppercase tracking-wider">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent text-center tracking-wider">
                 Virtual Teaching Assistant
               </h1>
             </div>
@@ -162,8 +204,70 @@ export default function LoginPage() {
             </div>
 
             {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+            {infoMessage && !error && <p className="text-sm text-emerald-400 text-center">{infoMessage}</p>}
 
-            {step === "email" ? (
+            {isRegistering ? (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div>
+                  <Label htmlFor="register-email" className="text-white text-sm font-medium">
+                    Email
+                  </Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 bg-transparent border-gray-700 text-white placeholder-gray-500 focus:border-gray-500 h-12"
+                    placeholder="Enter your institutional email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="role" className="text-white text-sm font-medium">
+                    Role
+                  </Label>
+                  <select
+                    id="role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as Role)}
+                    className="mt-1 w-full h-12 bg-transparent border border-gray-700 text-white rounded-md px-3 focus:border-gray-500 focus:outline-none"
+                  >
+                    <option value="student" className="bg-slate-900 text-white">
+                      Student
+                    </option>
+                    <option value="professor" className="bg-slate-900 text-white">
+                      Professor
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="division" className="text-white text-sm font-medium">
+                    Division (optional)
+                  </Label>
+                  <Input
+                    id="division"
+                    type="text"
+                    value={division}
+                    onChange={(e) => setDivision(e.target.value)}
+                    className="mt-1 bg-transparent border-gray-700 text-white placeholder-gray-500 focus:border-gray-500 h-12"
+                    placeholder="e.g., xCloud"
+                  />
+                </div>
+
+                <Button type="submit" disabled={loading || !email} className="w-full h-12 font-semibold">
+                  {loading ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-primary-foreground/70 border-t-transparent rounded-full animate-spin mr-2" />
+                      Submitting...
+                    </div>
+                  ) : (
+                    "Submit registration"
+                  )}
+                </Button>
+              </form>
+            ) : step === "email" ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
                   <Label htmlFor="email" className="text-white text-sm font-medium">
@@ -180,14 +284,10 @@ export default function LoginPage() {
                   />
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={loading || !email}
-                  className="w-full bg-white text-black hover:bg-gray-100 h-12 font-medium"
-                >
+                <Button type="submit" disabled={loading || !email} className="w-full h-12 font-semibold">
                   {loading ? (
                     <div className="flex items-center">
-                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground/70 border-t-transparent rounded-full animate-spin mr-2" />
                       Sending OTP...
                     </div>
                   ) : (
@@ -217,14 +317,10 @@ export default function LoginPage() {
                   <p className="text-sm text-gray-400 mt-2">We sent a verification code to {email}</p>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={loading || otp.length < 1}
-                  className="w-full bg-white text-black hover:bg-gray-100 h-12 font-medium"
-                >
+                <Button type="submit" disabled={loading || otp.length < 1} className="w-full h-12 font-semibold">
                   {loading ? (
                     <div className="flex items-center">
-                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground/70 border-t-transparent rounded-full animate-spin mr-2" />
                       Verifying...
                     </div>
                   ) : (

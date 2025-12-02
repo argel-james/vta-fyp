@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Navbar } from "@/components/navbar"
 import { ChatInterface } from "@/components/chat-interface"
 import { Sidebar } from "@/components/sidebar"
 import { SettingsModal } from "@/components/settings-modal"
+import { AuthGuard } from "@/components/auth-guard"
 
 export default function ChatPage() {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const { theme, setTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [learningLevel, setLearningLevel] = useState<"beginner" | "intermediate" | "advanced">("intermediate")
@@ -18,15 +20,6 @@ export default function ChatPage() {
   const documentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const htmlElement = document.documentElement
-    if (theme === "dark") {
-      htmlElement.classList.add("dark")
-    } else {
-      htmlElement.classList.remove("dark")
-    }
-  }, [theme])
-
-  useEffect(() => {
     const prompt = searchParams.get("prompt")
     if (prompt) {
       setInitialPrompt(prompt)
@@ -34,16 +27,20 @@ export default function ChatPage() {
   }, [searchParams])
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+    const nextTheme = theme === "light" ? "dark" : "light"
+    setTheme(nextTheme)
   }
 
-  return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-      {/* Navbar */}
-      <Navbar theme={theme} onToggleTheme={toggleTheme} userRole="student" />
+  const currentTheme: "light" | "dark" = theme === "light" ? "light" : "dark"
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden">
+  return (
+    <AuthGuard>
+      <div className="flex flex-col h-screen bg-background text-foreground">
+        {/* Navbar */}
+        <Navbar theme={currentTheme} onToggleTheme={toggleTheme} />
+
+        {/* Main Content Area */}
+        <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} onSettingsClick={() => setSettingsOpen(true)} />
 
@@ -70,15 +67,16 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        learningLevel={learningLevel}
-        onLearningLevelChange={setLearningLevel}
-        responseSpeed={responseSpeed}
-        onResponseSpeedChange={setResponseSpeed}
-      />
-    </div>
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          learningLevel={learningLevel}
+          onLearningLevelChange={setLearningLevel}
+          responseSpeed={responseSpeed}
+          onResponseSpeedChange={setResponseSpeed}
+        />
+      </div>
+    </AuthGuard>
   )
 }
