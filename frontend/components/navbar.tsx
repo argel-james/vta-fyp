@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ThemeToggle } from "./theme-toggle"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
+
+import { ThemeToggle } from "./theme-toggle"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/context/auth-context"
 
 interface NavbarProps {
   theme: "light" | "dark"
@@ -13,14 +16,22 @@ interface NavbarProps {
 
 export function Navbar({ theme, onToggleTheme, userRole = "student" }: NavbarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const resolvedRole = user?.role ?? userRole
 
   const navLinks = [
     { href: "/student", label: "Home", show: true },
     { href: "/chat", label: "Chat", show: true },
     { href: "/personas", label: "Personas", show: true },
-    { href: "/professor", label: "Professor", show: userRole === "professor" },
+    { href: "/professor", label: "Professor", show: resolvedRole === "professor" },
   ]
+
+  const handleLogout = async () => {
+    await logout()
+    router.push("/login")
+  }
 
   return (
     <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -31,7 +42,7 @@ export function Navbar({ theme, onToggleTheme, userRole = "student" }: NavbarPro
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">V</span>
             </div>
-            <span className="font-semibold text-lg text-foreground hidden sm:inline">Virtual Teaching Assistant</span>
+            <span className="font-semibold text-lg text-foreground hidden sm:inline">VTA</span>
             <span className="font-semibold text-lg text-foreground sm:hidden">VTA</span>
           </Link>
 
@@ -57,6 +68,9 @@ export function Navbar({ theme, onToggleTheme, userRole = "student" }: NavbarPro
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+            <Button variant="outline" size="sm" onClick={() => void handleLogout()} className="hidden md:inline-flex">
+              Logout
+            </Button>
 
             {/* Mobile Menu Button */}
             <button
@@ -89,6 +103,15 @@ export function Navbar({ theme, onToggleTheme, userRole = "student" }: NavbarPro
                   {link.label}
                 </Link>
               ))}
+            <button
+              onClick={() => {
+                void handleLogout()
+                setMobileMenuOpen(false)
+              }}
+              className="w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors text-destructive hover:bg-destructive/10"
+            >
+              Logout
+            </button>
           </div>
         )}
       </div>

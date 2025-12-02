@@ -23,6 +23,10 @@ pydantic-settings>=2.0.3
 fastapi
 uvicorn[standard]
 python-multipart
+SQLAlchemy>=2.0
+PyMySQL
+python-jose[cryptography]
+azure-communication-email
 
 # Tooling / tests
 pytest

@@ -29,6 +29,17 @@ class Settings(BaseSettings):
     data_dir: Path = Field(default_factory=lambda: BASE_DIR / "data")
     index_dir: Path = Field(default_factory=lambda: BASE_DIR / "index")
 
+    database_url: str
+    secret_key: str
+    email_connection_str: str
+    from_email: str
+
+    otp_expire_minutes: int = Field(default=5)
+    session_duration_minutes: int = Field(default=60)
+    session_extension_minutes: int = Field(default=30)
+    session_max_extensions: int = Field(default=2)
+    timezone: str = Field(default="Asia/Singapore")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix="VTA_",

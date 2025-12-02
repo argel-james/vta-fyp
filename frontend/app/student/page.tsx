@@ -1,26 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AuthGuard } from "@/components/auth-guard"
 
 export default function StudentLandingPage() {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
-
-  useEffect(() => {
-    const htmlElement = document.documentElement
-    if (theme === "dark") {
-      htmlElement.classList.add("dark")
-    } else {
-      htmlElement.classList.remove("dark")
-    }
-  }, [theme])
+  const { theme, setTheme } = useTheme()
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+    const nextTheme = theme === "light" ? "dark" : "light"
+    setTheme(nextTheme)
   }
+
+  const currentTheme: "light" | "dark" = theme === "light" ? "light" : "dark"
 
   const personas = [
     { id: "standard", label: "Standard", color: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
@@ -48,10 +43,11 @@ export default function StudentLandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
-      <Navbar theme={theme} onToggleTheme={toggleTheme} userRole="student" />
+    <AuthGuard roles={["student"]}>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+        <Navbar theme={currentTheme} onToggleTheme={toggleTheme} />
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Welcome back, Student</h1>
@@ -138,7 +134,8 @@ export default function StudentLandingPage() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </AuthGuard>
   )
 }

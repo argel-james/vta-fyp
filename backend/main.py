@@ -11,7 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routers import documents, indexing, rag
+from db import init_db
+from routers import auth, documents, indexing, rag
 from settings import get_settings
 
 load_dotenv()
@@ -38,6 +39,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def _startup_checks() -> None:
     """Validate filesystem layout before serving traffic."""
+    init_db()
     settings.ensure_directories()
     logger.info(
         "Startup checks complete",
@@ -51,6 +53,7 @@ async def _startup_checks() -> None:
 app.include_router(rag.router)
 app.include_router(documents.router)
 app.include_router(indexing.router)
+app.include_router(auth.router)
 
 @app.get("/")
 async def root():

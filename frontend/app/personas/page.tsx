@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { AuthGuard } from "@/components/auth-guard"
 import type { PersonaMode } from "@/types"
 
 export default function PersonasPage() {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const { theme, setTheme } = useTheme()
   const searchParams = useSearchParams()
   const [selectedPersona, setSelectedPersona] = useState<PersonaMode>(
     (searchParams.get("mode") as PersonaMode) || "standard",
@@ -19,18 +21,12 @@ export default function PersonasPage() {
   const [revealedHints, setRevealedHints] = useState<number[]>([])
   const [showFullAnswer, setShowFullAnswer] = useState(false)
 
-  useEffect(() => {
-    const htmlElement = document.documentElement
-    if (theme === "dark") {
-      htmlElement.classList.add("dark")
-    } else {
-      htmlElement.classList.remove("dark")
-    }
-  }, [theme])
-
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+    const nextTheme = theme === "light" ? "dark" : "light"
+    setTheme(nextTheme)
   }
+
+  const currentTheme: "light" | "dark" = theme === "light" ? "light" : "dark"
 
   const personas = [
     {
@@ -105,8 +101,9 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
-      <Navbar theme={theme} onToggleTheme={toggleTheme} userRole="student" />
+    <AuthGuard>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+        <Navbar theme={currentTheme} onToggleTheme={toggleTheme} />
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         {/* Header */}
@@ -229,6 +226,7 @@ export default function PersonasPage() {
           </Card>
         )}
       </main>
-    </div>
+      </div>
+    </AuthGuard>
   )
 }

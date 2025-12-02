@@ -1,29 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 export default function ScenarioPage() {
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const { theme, setTheme } = useTheme()
   const params = useParams()
   const router = useRouter()
   const scenarioId = params.id as string
 
-  useEffect(() => {
-    const htmlElement = document.documentElement
-    if (theme === "dark") {
-      htmlElement.classList.add("dark")
-    } else {
-      htmlElement.classList.remove("dark")
-    }
-  }, [theme])
-
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light")
+    const nextTheme = theme === "light" ? "dark" : "light"
+    setTheme(nextTheme)
   }
+
+  const currentTheme: "light" | "dark" = theme === "light" ? "light" : "dark"
 
   // Dummy scenario data
   const scenarios: Record<
@@ -121,7 +115,7 @@ export default function ScenarioPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
-      <Navbar theme={theme} onToggleTheme={toggleTheme} userRole="student" />
+      <Navbar theme={currentTheme} onToggleTheme={toggleTheme} userRole="student" />
 
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* Header */}
