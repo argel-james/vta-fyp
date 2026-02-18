@@ -52,6 +52,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               {message.content}
               {message.isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-accent/60 rounded animate-pulse" />}
             </p>
+            {message.sources && message.sources.length > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                <div className="font-semibold">Sources</div>
+                <div className="flex flex-wrap gap-2">
+                  {message.sources.map((source, idx) => (
+                    <span key={`${source.file}-${source.page ?? idx}`} className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1">
+                      <span>{source.file}</span>
+                      {typeof source.page === "number" && <span className="text-[11px] text-foreground/70">p{source.page}</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <span className="text-xs text-muted-foreground px-1">
             {message.timestamp.toLocaleTimeString([], {

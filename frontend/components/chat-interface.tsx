@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, forwardRef } from "react"
 import type { Message, PersonaMode } from "@/types"
+import { askQuestion } from "@/lib/chat-service"
+import { useAuth } from "@/context/auth-context"
 import { MessageBubble } from "./message-bubble"
 import { PersonaSelector } from "./persona-selector"
 import { ChatInput } from "./chat-input"
@@ -10,10 +12,12 @@ interface ChatInterfaceProps {
   learningLevel: "beginner" | "intermediate" | "advanced"
   responseSpeed: number
   initialPrompt?: string | null
+  courseId?: string
 }
 
 export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
-  ({ learningLevel, responseSpeed, initialPrompt }, ref) => {
+  ({ learningLevel, responseSpeed, initialPrompt, courseId }, ref) => {
+    const { token } = useAuth()
     const [messages, setMessages] = useState<Message[]>([
       {
         id: "1",
@@ -47,7 +51,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
       }
     }, [initialPrompt])
 
-    const streamResponse = async (fullContent: string, messageId: string, personaMode: PersonaMode) => {
+    const streamResponse = async (fullContent: string, messageId: string) => {
       let currentContent = ""
       const chunks = fullContent.split(" ")
       const speedMultiplier = responseSpeed / 50
@@ -133,8 +137,42 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
       setMessages((prev) => [...prev, assistantMessage])
 
       const response = getResponseForLevel(persona)
-      await streamResponse(response, assistantMessageId, persona)
-      setIsLoading(false)
+      const targetCourseId = courseId?.trim() || "sc2107"
+
+      try {
+        const reply = await askQuestion({
+          question: content,
+          courseId: targetCourseId,
+          token,
+          persona,
+          learningLevel,
+        })
+
+        await streamResponse(reply.answer || response, assistantMessageId)
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, isStreaming: false, sources: reply.sources }
+              : msg,
+          ),
+        )
+      } catch (error) {
+        const fallback = error instanceof Error ? error.message : "Something went wrong. Please try again."
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? {
+                  ...msg,
+                  isStreaming: false,
+                  content: `Unable to fetch an answer for course '${targetCourseId}'. ${fallback}`,
+                }
+              : msg,
+          ),
+        )
+      } finally {
+        setIsLoading(false)
+      }
     }
 
     return (
