@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -68,6 +69,11 @@ def _extract_token(header_value: str | None) -> str:
     return token
 
 
+def _ensure_aware(dt: datetime) -> datetime:
+    tzinfo = timezone_now().tzinfo
+    return dt if dt.tzinfo else dt.replace(tzinfo=tzinfo)
+
+
 def _get_authenticated_session(
     db: Session,
     authorization: str | None,
@@ -82,7 +88,8 @@ def _get_authenticated_session(
     if not session or not session.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
 
-    if session.expiry < timezone_now():
+    expiry = _ensure_aware(session.expiry)
+    if expiry < timezone_now():
         deactivate_session(db, session)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session expired")
 

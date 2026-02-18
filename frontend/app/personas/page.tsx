@@ -7,19 +7,27 @@ import { Navbar } from "@/components/navbar"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AuthGuard } from "@/components/auth-guard"
-import type { PersonaMode } from "@/types"
+import type { PersonaMode, SourceInfo } from "@/types"
+import { askQuestion } from "@/lib/chat-service"
+import { useAuth } from "@/context/auth-context"
 
 export default function PersonasPage() {
   const { theme, setTheme } = useTheme()
   const searchParams = useSearchParams()
+  const { token } = useAuth()
   const [selectedPersona, setSelectedPersona] = useState<PersonaMode>(
     (searchParams.get("mode") as PersonaMode) || "standard",
   )
   const [question, setQuestion] = useState("")
+  const [courseId] = useState(() => searchParams.get("course") || "sc2107")
   const [hints, setHints] = useState<string[]>([])
+  const [followUps, setFollowUps] = useState<string[]>([])
   const [fullAnswer, setFullAnswer] = useState("")
+  const [sources, setSources] = useState<SourceInfo[]>([])
   const [revealedHints, setRevealedHints] = useState<number[]>([])
   const [showFullAnswer, setShowFullAnswer] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "light"
@@ -59,39 +67,107 @@ export default function PersonasPage() {
     },
   ]
 
-  const handleAskQuestion = () => {
-    if (!question.trim()) return
+  const summarizeTopic = (questionText: string, answer: string) => {
+    if (questionText?.trim()) return questionText.trim()
+    const firstSentence = answer.split(/\.|\n/)[0]?.trim()
+    return firstSentence || "this topic"
+  }
 
-    // Dummy hints based on persona
-    const dummyHints = {
+  const pickSourceTitle = (sourceList: SourceInfo[]) => {
+    if (!sourceList?.length) return ""
+    const first = sourceList[0]
+    return first.file ? ` (see ${first.file}${typeof first.page === "number" ? ` p${first.page}` : ""})` : ""
+  }
+
+  const generateHints = (topic: string, persona: PersonaMode, sourceTitle: string) => {
+    const contextualTopic = topic || "this topic"
+    const tag = sourceTitle || ""
+    const prompts = {
       standard: [
-        "Think about the fundamental definition of this concept.",
-        "Consider how this relates to similar problems you've solved.",
-        "Break the problem down into smaller, manageable steps.",
+        `Restate ${contextualTopic}${tag} in one clear line using your own words.`,
+        `Which prerequisite concept unlocks ${contextualTopic}?`,
+        `Map the step-by-step flow of ${contextualTopic} (setup → action → result).`,
       ],
       advocate: [
-        "What assumptions are you making here?",
-        "Can you think of a scenario where the opposite might be true?",
-        "How would you defend the counterargument?",
+        `Which assumption about ${contextualTopic}${tag} could collapse under a boundary case?`,
+        `How would you argue the opposite of the common take on ${contextualTopic}?`,
+        `What hard evidence would force you to change your view on ${contextualTopic}?`,
       ],
       joker: [
-        "Here's a fun way to remember this: imagine a pizza...",
-        "Plot twist: what if I told you most people get this backwards?",
-        "Let me give you a ridiculous but memorable example...",
+        `If ${contextualTopic} were a movie plot, what is the absurd twist?`,
+        `What is the funniest totally-wrong take on ${contextualTopic} you can debunk?`,
+        `Drop a meme-worthy analogy for ${contextualTopic} that still teaches the core idea.`,
       ],
       socratic: [
-        "What do you already know about this topic?",
-        "How would you explain this to someone younger?",
-        "What question would you ask yourself to get closer to the answer?",
+        `What do you already know that directly anchors ${contextualTopic}${tag}?`,
+        `How would you teach ${contextualTopic} to a junior student with one question?`,
+        `What is the next precise question that would unlock the mechanism of ${contextualTopic}?`,
       ],
     }
+    return prompts[persona]
+  }
 
-    setHints(dummyHints[selectedPersona])
-    setFullAnswer(
-      "This is where the complete, detailed answer would appear. In the real implementation, this would be fetched from your RAG backend API based on the course materials and the selected persona mode.",
-    )
+  const generateFollowUps = (topic: string, persona: PersonaMode, sourceTitle: string) => {
+    const stem = topic || "this concept"
+    const tag = sourceTitle || ""
+    const follow = {
+      standard: [
+        `Show a concrete use case of ${stem}${tag} and contrast it with an alternative.`,
+        `Where does ${stem} break down in practice, and how do you guardrail it?`,
+        `How would you explain ${stem} with a minimal working example?`,
+      ],
+      advocate: [
+        `Build the strongest counterclaim against ${stem}${tag}; how would you rebut it?`,
+        `If ${stem} failed in production, what symptom would you see first?`,
+        `Which boundary conditions flip the usual intuition about ${stem}?`,
+      ],
+      joker: [
+        `What is the most over-the-top scenario where ${stem} hilariously saves the day?`,
+        `If ${stem} were a character, how would it feud with its opposite approach?`,
+        `What classic rookie blunder about ${stem}${tag} always makes you smile?`,
+      ],
+      socratic: [
+        `What is the smallest experiment you can run to validate ${stem}${tag}?`,
+        `Which prior concept must be solid before ${stem} makes sense?`,
+        `How would you falsify your understanding of ${stem}?`,
+      ],
+    }
+    return follow[persona]
+  }
+
+  const handleAskQuestion = async (prompt?: string) => {
+    const activeQuestion = (prompt ?? question).trim()
+    if (!activeQuestion) return
+    setIsLoading(true)
+    setError(null)
+    setFullAnswer("")
+    setSources([])
     setRevealedHints([])
     setShowFullAnswer(false)
+
+    try {
+      const reply = await askQuestion({
+        question: activeQuestion,
+        courseId,
+        token,
+        persona: selectedPersona,
+        learningLevel: "intermediate",
+      })
+
+      const replySources = reply.sources || []
+      const topic = summarizeTopic(activeQuestion, reply.answer)
+      const sourceTag = pickSourceTitle(replySources)
+
+      setFullAnswer(reply.answer)
+      setSources(replySources)
+      setHints(generateHints(topic, selectedPersona, sourceTag))
+      setFollowUps(generateFollowUps(topic, selectedPersona, sourceTag))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to fetch an answer right now."
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const revealHint = (index: number) => {
@@ -164,8 +240,13 @@ export default function PersonasPage() {
             className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none"
             rows={3}
           />
-          <Button onClick={handleAskQuestion} className="w-full sm:w-auto" disabled={!question.trim()}>
-            Get Answer
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button
+            onClick={() => void handleAskQuestion()}
+            className="w-full sm:w-auto"
+            disabled={!question.trim() || isLoading}
+          >
+            {isLoading ? "Thinking..." : "Get Persona Answer"}
           </Button>
         </Card>
 
@@ -220,9 +301,46 @@ export default function PersonasPage() {
               {showFullAnswer && (
                 <div className="px-4 py-4 bg-card">
                   <p className="text-sm text-foreground leading-relaxed">{fullAnswer}</p>
+                  {sources.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="text-xs font-semibold text-muted-foreground">Sources</div>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        {sources.map((source, idx) => (
+                          <span
+                            key={`${source.file}-${source.page ?? idx}`}
+                            className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1"
+                          >
+                            <span>{source.file}</span>
+                            {typeof source.page === "number" && <span className="text-[11px] text-foreground/70">p{source.page}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Follow-up questions */}
+            {followUps.length > 0 && (
+              <div className="border border-border rounded-lg p-4 space-y-3 bg-secondary/10">
+                <div className="text-sm font-semibold text-foreground">Follow-up prompts</div>
+                <div className="flex flex-wrap gap-2">
+                  {followUps.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setQuestion(item)
+                        void handleAskQuestion(item)
+                      }}
+                      className="text-xs px-3 py-2 rounded-lg border border-border bg-card hover:bg-primary/10 transition-colors"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </Card>
         )}
       </main>

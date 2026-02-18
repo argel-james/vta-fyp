@@ -15,14 +15,19 @@ export default function ChatPage() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [learningLevel, setLearningLevel] = useState<"beginner" | "intermediate" | "advanced">("intermediate")
   const [responseSpeed, setResponseSpeed] = useState(50)
+  const [courseId, setCourseId] = useState("sc2107")
   const searchParams = useSearchParams()
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null)
   const documentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const prompt = searchParams.get("prompt")
+    const course = searchParams.get("course")
     if (prompt) {
       setInitialPrompt(prompt)
+    }
+    if (course) {
+      setCourseId(course)
     }
   }, [searchParams])
 
@@ -63,6 +68,7 @@ export default function ChatPage() {
             learningLevel={learningLevel}
             responseSpeed={responseSpeed}
             initialPrompt={initialPrompt}
+            courseId={courseId}
           />
         </div>
       </div>

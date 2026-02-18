@@ -109,8 +109,8 @@ async def ask_question(
     """
     try:
         rag_components = _get_rag_components(request.course_id, app_settings)
-        chain = rag_components["chain"]
-        retriever = rag_components["retriever"]
+        chain = rag_components.chain
+        retriever = rag_components.retriever
         
         answer = answer_question(chain, retriever, request.question)
         
