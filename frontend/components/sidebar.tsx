@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 interface SidebarProps {
   isOpen: boolean
@@ -9,6 +11,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onSettingsClick }: SidebarProps) {
   const [activeChat, setActiveChat] = useState<string | null>("new")
+  const pathname = usePathname()
 
   const recentChats = [
     { id: "1", title: "Calculus Problem Set", date: "Today" },
@@ -17,11 +20,12 @@ export function Sidebar({ isOpen, onSettingsClick }: SidebarProps) {
   ]
 
   return (
-    <aside
-      className={`${
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      } fixed lg:static lg:translate-x-0 z-40 w-64 h-screen bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out`}
-    >
+    <>
+      <aside
+        className={`${
+          isOpen ? "w-64" : "w-0"
+        } h-[calc(100vh-73px)] bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
+      >
       {/* New Chat Button */}
       <div className="p-4 border-b border-border">
         <button className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center justify-center gap-2">
@@ -37,18 +41,23 @@ export function Sidebar({ isOpen, onSettingsClick }: SidebarProps) {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Learning Modes</h3>
         <div className="space-y-2">
           {[
-            { icon: "💬", label: "Standard Chat", mode: "chat" },
-            { icon: "🎭", label: "Devil's Advocate", mode: "advocate" },
-            { icon: "😄", label: "Joker Mode", mode: "joker" },
-            { icon: "🤔", label: "Socratic Method", mode: "socratic" },
+            { icon: "💬", label: "Standard Chat", href: "/chat" },
+            { icon: "🎭", label: "Personas", href: "/personas" },
+            { icon: "😄", label: "Discussions", href: "/personas?mode=joker" },
+            { icon: "🤔", label: "Socratic", href: "/personas?mode=socratic" },
           ].map((item) => (
-            <button
-              key={item.mode}
-              className="w-full px-3 py-2 text-left text-sm rounded-lg hover:bg-secondary/50 transition-colors text-foreground/80 hover:text-foreground flex items-center gap-2"
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block w-full px-3 py-2 text-left text-sm rounded-lg transition-colors flex items-center gap-2 ${
+                pathname === item.href || (pathname?.includes('personas') && item.href === '/personas')
+                  ? "bg-primary/20 text-primary font-medium"
+                  : "hover:bg-secondary/50 text-foreground/80 hover:text-foreground"
+              }`}
             >
               <span>{item.icon}</span>
               {item.label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -107,6 +116,7 @@ export function Sidebar({ isOpen, onSettingsClick }: SidebarProps) {
           Settings
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
