@@ -166,7 +166,7 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="flex-1 w-full overflow-y-auto bg-gradient-to-br from-background via-background to-secondary/5">
+    <div className="flex-1 w-full h-full overflow-y-auto bg-gradient-to-br from-background via-background to-secondary/5">
       <div className="flex justify-center min-h-full">
         <main className="w-full max-w-6xl px-8 py-8 space-y-8">
           {/* Header */}

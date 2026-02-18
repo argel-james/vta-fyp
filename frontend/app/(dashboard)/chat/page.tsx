@@ -22,7 +22,7 @@ export default function ChatPage() {
   }, [searchParams])
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden w-full">
+    <div className="flex-1 min-h-0 flex flex-col w-full overflow-hidden">
       {/* Mobile Menu Toggle */}
       <div className="lg:hidden border-b border-border bg-card/50 backdrop-blur-sm px-4 py-3">
         <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
@@ -32,14 +32,12 @@ export default function ChatPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-hidden flex">
-        <div className="m-auto w-full max-w-5xl">
-          <ChatInterface
-            ref={documentRef}
-            initialPrompt={initialPrompt}
-            courseId={courseId}
-          />
-        </div>
+      <div className="flex-1 min-h-0 w-full max-w-5xl mx-auto flex flex-col">
+        <ChatInterface
+          ref={documentRef}
+          initialPrompt={initialPrompt}
+          courseId={courseId}
+        />
       </div>
     </div>
   )

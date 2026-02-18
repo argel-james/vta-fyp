@@ -178,10 +178,10 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
     return (
       <div
         ref={ref}
-        className="w-full h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5"
+        className="w-full flex-1 min-h-0 flex flex-col bg-gradient-to-br from-background via-background to-secondary/5"
       >
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 space-y-4 w-full">
           <div className="max-w-2xl mx-auto w-full space-y-4">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
