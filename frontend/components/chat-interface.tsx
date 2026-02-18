@@ -9,14 +9,14 @@ import { PersonaSelector } from "./persona-selector"
 import { ChatInput } from "./chat-input"
 
 interface ChatInterfaceProps {
-  learningLevel: "beginner" | "intermediate" | "advanced"
-  responseSpeed: number
   initialPrompt?: string | null
   courseId?: string
+  learningLevel?: "beginner" | "intermediate" | "advanced"
+  responseSpeed?: number
 }
 
 export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
-  ({ learningLevel, responseSpeed, initialPrompt, courseId }, ref) => {
+  ({ initialPrompt, courseId, learningLevel = "intermediate", responseSpeed = 50 }, ref) => {
     const { token } = useAuth()
     const [messages, setMessages] = useState<Message[]>([
       {
@@ -178,7 +178,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
     return (
       <div
         ref={ref}
-        className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5"
+        className="w-full h-full flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-secondary/5"
       >
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
