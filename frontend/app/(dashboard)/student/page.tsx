@@ -36,7 +36,7 @@ export default function StudentLandingPage() {
         <main className="w-full max-w-6xl px-8 py-8 space-y-8">
           {/* Welcome Section */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Welcome back, Student</h1>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back, pravitooo</h1>
             <p className="text-muted-foreground">CS101: Introduction to Computer Science</p>
             <p className="text-sm text-muted-foreground">You have 3 new materials this week.</p>
           </div>
