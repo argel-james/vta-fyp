@@ -44,7 +44,7 @@ def build_rag_chain(retriever, settings: AzureSettings):
 
 def answer_question(chain, retriever, question: str) -> Answer:
     text = chain.invoke(question)
-    docs = retriever.get_relevant_documents(question)
+    docs = retriever.invoke(question)
     seen = set()
     sources: List[Source] = []
     for d in docs[:5]:
