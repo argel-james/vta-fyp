@@ -11,14 +11,13 @@ faiss-cpu
 pypdf
 docx2txt
 unstructured
-unstructured[pptx]
-unstructured[docx]
-unstructured[pdf]
+python-pptx
 
 # Env vars
 python-dotenv
 
 pydantic-settings>=2.0.3
+email-validator
 
 fastapi
 uvicorn[standard]

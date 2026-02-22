@@ -7,8 +7,8 @@ load_dotenv()
 @dataclass(frozen=True)
 class AzureSettings:
     # --- Chat (gpt-4o-mini) ---
-    chat_endpoint: str = os.getenv("AZURE_OPENAI_ENDPOINT_GPT4o-mini", "")
-    chat_key: str = os.getenv("AZURE_OPENAI_API_KEY_GPT4o-mini", "")
+    chat_endpoint: str = os.getenv("AZURE_OPENAI_ENDPOINT_CHAT", os.getenv("AZURE_OPENAI_ENDPOINT_GPT4o-mini", ""))
+    chat_key: str = os.getenv("AZURE_OPENAI_API_KEY_CHAT", os.getenv("AZURE_OPENAI_API_KEY_GPT4o-mini", ""))
     chat_api_version: str = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
     chat_deployment: str = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4o-mini")
 
@@ -24,8 +24,8 @@ class AzureSettings:
 
     def validate(self):
         missing = []
-        if not self.chat_endpoint:    missing.append("AZURE_OPENAI_ENDPOINT_GPT4o-mini")
-        if not self.chat_key:         missing.append("AZURE_OPENAI_API_KEY_GPT4o-mini")
+        if not self.chat_endpoint:    missing.append("AZURE_OPENAI_ENDPOINT_CHAT")
+        if not self.chat_key:         missing.append("AZURE_OPENAI_API_KEY_CHAT")
         if not self.chat_deployment:  missing.append("AZURE_OPENAI_CHAT_DEPLOYMENT")
         if not self.chat_api_version: missing.append("AZURE_OPENAI_API_VERSION")
 

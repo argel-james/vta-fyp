@@ -1,0 +1,16 @@
+[
+  { "name": "AZURE_OPENAI_API_KEY_GPT4o-mini", "value": "DRJcOdVCZu1Tatcbi1t4hlS3an9yWZESdE3mqbUwktSvCBmt8nGkJQQJ99BIACHYHv6XJ3w3AAAAACOGA1Co", "slotSetting": false },
+  { "name": "AZURE_OPENAI_ENDPOINT_GPT4o-mini", "value": "https://argel-mfkqibiy-eastus2.openai.azure.com/", "slotSetting": false },
+  { "name": "AZURE_OPENAI_API_VERSION", "value": "2024-12-01-preview", "slotSetting": false },
+  { "name": "AZURE_OPENAI_API_KEY_Embedding", "value": "BbjhhorwfbJvBP6YM79MBPu1hvXHg0cgQCdFqKVVreffyjmaXG5AJQQJ99BBACYeBjFXJ3w3AAAAACOGaSrZ", "slotSetting": false },
+  { "name": "AZURE_OPENAI_ENDPOINT_Embedding", "value": "https://ai-argel001ai4655162818494611.openai.azure.com/", "slotSetting": false },
+  { "name": "AZURE_OPENAI_API_VERSION_Embedding", "value": "2024-12-01-preview", "slotSetting": false },
+  { "name": "AZURE_OPENAI_CHAT_DEPLOYMENT", "value": "gpt-4o-mini", "slotSetting": false },
+  { "name": "AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT", "value": "text-embedding-3-small", "slotSetting": false },
+  { "name": "VTA_INDEX_DIR", "value": "./index", "slotSetting": false },
+  { "name": "VTA_DATABASE_URL", "value": "mysql+pymysql://vtaadmin:ilovetits69!123@vta-mysql-server.mysql.database.azure.com:3306/vta_database_system", "slotSetting": false },
+  { "name": "VTA_SECRET_KEY", "value": "W4i2rcIm9ly2wHWW2x-CPVMPVewsD9mrY8Duw_iH1I1Cy8xHonMyclTNHGMiAP29FgpWNSAavS8GC20r0uJwjQ", "slotSetting": false },
+  { "name": "VTA_EMAIL_CONNECTION_STR", "value": "endpoint=https://vta-comm-service.asiapacific.communication.azure.com/;accesskey=APfEB1YZYXp4JAXNWQHKNqraF9dFquVrhiGu9NP1YNtprSKcFQ8OJQQJ99BKACULyCpxnnhMAAAAAZCSpb13", "slotSetting": false },
+  { "name": "VTA_FROM_EMAIL", "value": "DoNotReply@65e00946-7659-4570-b17b-9f7e8ed1c267.azurecomm.net", "slotSetting": false },
+  { "name": "WEBSITES_PORT", "value": "8000", "slotSetting": false }
+]
