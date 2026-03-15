@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from db import init_db
-from routers import auth, documents, indexing, rag
+from routers import analytics, auth, content, documents, indexing, rag
 from settings import get_settings
 
 load_dotenv()
@@ -54,13 +54,15 @@ app.include_router(rag.router)
 app.include_router(documents.router)
 app.include_router(indexing.router)
 app.include_router(auth.router)
+app.include_router(content.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 async def root():
     return {
-        "message": "Virtual Teaching Assistant API",
+        "message": "GenAI Assisted Virtual Classroom API",
         "status": "running",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "docs": "/docs"
     }
 

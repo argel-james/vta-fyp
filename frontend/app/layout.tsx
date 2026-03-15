@@ -4,14 +4,15 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/auth-context"
+import { VisualThemeProvider } from "@/context/visual-theme-context"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Virtual Teaching Assistant - AI Learning Platform",
-  description: "Interactive AI-powered teaching assistant with multiple learning modes and personas",
+  title: "GenAI Virtual Classroom - AI Learning Platform",
+  description: "GenAI assisted virtual classroom with gamified learning, personas, and analytics",
   generator: "v0.app",
   icons: {
     icon: [
@@ -41,10 +42,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${_geist.className} font-sans antialiased`}>
         <ThemeProvider>
-          <AuthProvider>
-            {children}
-            <Analytics />
-          </AuthProvider>
+          <VisualThemeProvider>
+            <AuthProvider>
+              {children}
+              <Analytics />
+            </AuthProvider>
+          </VisualThemeProvider>
         </ThemeProvider>
       </body>
     </html>

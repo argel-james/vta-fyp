@@ -22,7 +22,7 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
       {
         id: "1",
         content:
-          "Welcome to Adaptive Tutor! I'm here to help you learn through thoughtful questioning and guided discovery. Choose a learning mode to get started.",
+          "Welcome to GenAI Virtual Classroom! I'm here to help you learn through thoughtful questioning and guided discovery. Choose a learning mode to get started.",
         role: "assistant",
         persona: "standard",
         timestamp: new Date(),

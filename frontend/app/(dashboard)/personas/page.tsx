@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { PersonaMode, SourceInfo } from "@/types"
-import { askQuestion } from "@/lib/chat-service"
+import { askQuestion, fetchCourses } from "@/lib/chat-service"
 import { useAuth } from "@/context/auth-context"
 
 export default function PersonasPage() {
@@ -15,7 +15,15 @@ export default function PersonasPage() {
     (searchParams.get("mode") as PersonaMode) || "standard",
   )
   const [question, setQuestion] = useState("")
-  const [courseId] = useState(() => searchParams.get("course") || "sc2107")
+  const [courseId, setCourseId] = useState(() => searchParams.get("course") || "sc2107")
+  const [courses, setCourses] = useState<string[]>([])
+
+  useEffect(() => {
+    fetchCourses(token).then((c) => {
+      setCourses(c)
+      if (c.length > 0 && !searchParams.get("course")) setCourseId(c[0])
+    }).catch(() => {})
+  }, [token, searchParams])
   const [hints, setHints] = useState<string[]>([])
   const [followUps, setFollowUps] = useState<string[]>([])
   const [fullAnswer, setFullAnswer] = useState("")
@@ -170,11 +178,27 @@ export default function PersonasPage() {
       <div className="flex justify-center min-h-full">
         <main className="w-full max-w-6xl px-8 py-8 space-y-8">
           {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Persona Discussions</h1>
-            <p className="text-muted-foreground">
-              Choose a learning persona and explore thought-provoking, step-by-step answers.
-            </p>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-foreground">Persona Discussions</h1>
+              <p className="text-muted-foreground">
+                Choose a learning persona and explore thought-provoking, step-by-step answers.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Course</label>
+              <select
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm"
+              >
+                {courses.length > 0 ? (
+                  courses.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)
+                ) : (
+                  <option value={courseId}>{courseId.toUpperCase()}</option>
+                )}
+              </select>
+            </div>
           </div>
 
           {/* Persona Selector */}

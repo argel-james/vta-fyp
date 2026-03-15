@@ -1,5 +1,8 @@
 "use client"
 
+import { useVisualTheme } from "@/context/visual-theme-context"
+import type { VisualTheme } from "@/types"
+
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
@@ -9,6 +12,12 @@ interface SettingsModalProps {
   onResponseSpeedChange: (speed: number) => void
 }
 
+const visualThemes: { value: VisualTheme; label: string; description: string; preview: string }[] = [
+  { value: "professional", label: "Professional", description: "Clean, modern look for universities", preview: "bg-indigo-500" },
+  { value: "playful", label: "Playful", description: "Colorful, rounded — great for young learners", preview: "bg-pink-500" },
+  { value: "classic", label: "Classic", description: "Muted, serif — traditional academic feel", preview: "bg-amber-700" },
+]
+
 export function SettingsModal({
   isOpen,
   onClose,
@@ -17,6 +26,8 @@ export function SettingsModal({
   responseSpeed,
   onResponseSpeedChange,
 }: SettingsModalProps) {
+  const { visualTheme, setVisualTheme } = useVisualTheme()
+
   if (!isOpen) return null
 
   const learningLevels = [
@@ -27,13 +38,10 @@ export function SettingsModal({
 
   return (
     <>
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-card border border-border rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-          {/* Header */}
           <div className="sticky top-0 bg-card border-b border-border px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Settings</h2>
             <button onClick={onClose} className="p-1 hover:bg-secondary rounded-lg transition-colors">
@@ -43,8 +51,29 @@ export function SettingsModal({
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-6 space-y-6">
+            {/* Visual Theme */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-4">Visual Theme</label>
+              <div className="space-y-2">
+                {visualThemes.map((t) => (
+                  <button
+                    key={t.value}
+                    onClick={() => setVisualTheme(t.value)}
+                    className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left flex items-center gap-3 ${
+                      visualTheme === t.value ? "border-primary bg-primary/10" : "border-border hover:border-border/60"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full ${t.preview} flex-shrink-0`} />
+                    <div>
+                      <div className="font-medium text-foreground">{t.label}</div>
+                      <div className="text-xs text-muted-foreground">{t.description}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Learning Level */}
             <div>
               <label className="block text-sm font-semibold text-foreground mb-4">Learning Level</label>
@@ -54,9 +83,7 @@ export function SettingsModal({
                     key={level.value}
                     onClick={() => onLearningLevelChange(level.value as "beginner" | "intermediate" | "advanced")}
                     className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left ${
-                      learningLevel === level.value
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-border/60"
+                      learningLevel === level.value ? "border-primary bg-primary/10" : "border-border hover:border-border/60"
                     }`}
                   >
                     <div className="font-medium text-foreground">{level.label}</div>
@@ -86,53 +113,16 @@ export function SettingsModal({
               </div>
             </div>
 
-            {/* Persona Info */}
-            <div className="p-4 bg-secondary/30 rounded-lg border border-border">
-              <h3 className="font-medium text-foreground mb-3">Persona Modes</h3>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <div className="flex gap-2">
-                  <span>🎓</span>
-                  <div>
-                    <div className="font-medium text-foreground">Standard</div>
-                    <div>Structured, step-by-step learning</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <span>🎭</span>
-                  <div>
-                    <div className="font-medium text-foreground">Devil's Advocate</div>
-                    <div>Challenges assumptions and perspective</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <span>😄</span>
-                  <div>
-                    <div className="font-medium text-foreground">Joker</div>
-                    <div>Humorous, engaging teaching style</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <span>🤔</span>
-                  <div>
-                    <div className="font-medium text-foreground">Socratic</div>
-                    <div>Questions to guide discovery</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* About */}
             <div className="p-4 bg-accent/10 rounded-lg border border-border">
-              <h3 className="font-medium text-foreground mb-2">About Adaptive Tutor</h3>
+              <h3 className="font-medium text-foreground mb-2">About GenAI Virtual Classroom</h3>
               <p className="text-xs text-muted-foreground">
-                This AI teaching assistant uses multiple learning modes to make education engaging and
-                thought-provoking. Responses are carefully paced to encourage deep learning rather than passive
-                consumption.
+                A GenAI-powered virtual classroom with gamified learning, persona-driven discussions, flashcards,
+                and analytics. Designed for learners of all ages — from kindergarten to university.
               </p>
             </div>
           </div>
 
-          {/* Footer */}
           <div className="border-t border-border px-6 py-4 bg-secondary/30">
             <button
               onClick={onClose}

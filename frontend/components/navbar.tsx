@@ -26,7 +26,9 @@ export function Navbar({ theme, onToggleTheme, onToggleSidebar, userRole = "stud
     { href: "/student", label: "Home", show: true },
     { href: "/chat", label: "Chat", show: true },
     { href: "/personas", label: "Personas", show: true },
+    { href: "/learn", label: "Learn", show: true },
     { href: "/professor", label: "Professor", show: resolvedRole === "professor" },
+    { href: "/analytics", label: "Analytics", show: resolvedRole === "professor" },
   ]
 
   const handleLogout = async () => {
@@ -51,10 +53,10 @@ export function Navbar({ theme, onToggleTheme, onToggleSidebar, userRole = "stud
             </button>
             <Link href="/student" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">V</span>
+                <span className="text-primary-foreground font-bold text-lg">G</span>
               </div>
-              <span className="font-semibold text-lg text-foreground hidden sm:inline">VTA</span>
-              <span className="font-semibold text-lg text-foreground sm:hidden">VTA</span>
+              <span className="font-semibold text-lg text-foreground hidden sm:inline">GVC</span>
+              <span className="font-semibold text-lg text-foreground sm:hidden">GVC</span>
             </Link>
           </div>
 

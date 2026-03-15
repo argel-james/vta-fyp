@@ -45,6 +45,7 @@ export function Sidebar({ isOpen, onSettingsClick }: SidebarProps) {
             { icon: "🎭", label: "Personas", href: "/personas" },
             { icon: "😄", label: "Discussions", href: "/personas?mode=joker" },
             { icon: "🤔", label: "Socratic", href: "/personas?mode=socratic" },
+            { icon: "🎮", label: "Learn & Play", href: "/learn" },
           ].map((item) => (
             <Link
               key={item.href}

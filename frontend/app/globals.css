@@ -127,6 +127,40 @@
   }
 }
 
+/* ---- Visual Theme: Playful (kindergarten / young learners) ---- */
+[data-visual-theme="playful"] {
+  --radius: 1rem;
+  --primary: oklch(0.65 0.25 330);
+  --primary-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.72 0.22 140);
+  --accent-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.92 0.08 80);
+  --secondary-foreground: oklch(0.35 0.15 30);
+  font-family: "Comic Sans MS", "Chalkboard SE", "Geist", sans-serif;
+}
+[data-visual-theme="playful"].dark {
+  --primary: oklch(0.75 0.22 330);
+  --accent: oklch(0.65 0.2 140);
+  --secondary: oklch(0.28 0.06 80);
+}
+
+/* ---- Visual Theme: Classic (muted, serif) ---- */
+[data-visual-theme="classic"] {
+  --radius: 0.25rem;
+  --primary: oklch(0.35 0.08 30);
+  --primary-foreground: oklch(0.98 0.01 60);
+  --accent: oklch(0.5 0.1 50);
+  --accent-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.94 0.02 60);
+  --secondary-foreground: oklch(0.3 0.05 30);
+  font-family: "Georgia", "Geist", serif;
+}
+[data-visual-theme="classic"].dark {
+  --primary: oklch(0.55 0.1 30);
+  --accent: oklch(0.6 0.1 50);
+  --secondary: oklch(0.22 0.03 30);
+}
+
 @layer components {
   .message-animate {
     @apply animate-in fade-in slide-in-from-bottom-2 duration-300;
@@ -134,5 +168,14 @@
 
   .thinking-pulse {
     @apply bg-gradient-to-r from-primary/20 to-accent/20 animate-pulse;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
   }
 }

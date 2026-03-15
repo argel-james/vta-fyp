@@ -1,6 +1,7 @@
 """Application-wide configuration helpers."""
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import List
@@ -15,8 +16,8 @@ BASE_DIR = Path(__file__).parent
 class Settings(BaseSettings):
     """Centralised configuration derived from environment variables."""
 
-    api_title: str = "Virtual Teaching Assistant API"
-    api_description: str = "RAG-based Q&A API for course materials"
+    api_title: str = "GenAI Assisted Virtual Classroom API"
+    api_description: str = "RAG-based Q&A API with gamified learning, analytics, and multi-theme support"
     api_version: str = "1.0.0"
 
     allowed_origins: List[str] = Field(
@@ -33,6 +34,9 @@ class Settings(BaseSettings):
     secret_key: str
     email_connection_str: str
     from_email: str
+
+    blob_connection_str: str = Field(default="")
+    blob_container: str = Field(default="gvc-indexes")
 
     otp_expire_minutes: int = Field(default=5)
     session_duration_minutes: int = Field(default=60)
@@ -51,7 +55,13 @@ class Settings(BaseSettings):
     @classmethod
     def _split_origins(cls, value: str | List[str]) -> List[str]:  # noqa: D401
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
+            stripped = value.strip()
+            if stripped.startswith("["):
+                try:
+                    return json.loads(stripped)
+                except json.JSONDecodeError:
+                    pass
+            return [origin.strip() for origin in stripped.split(",") if origin.strip()]
         return value
 
     @field_validator("data_dir", "index_dir", mode="after")

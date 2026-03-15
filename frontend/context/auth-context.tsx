@@ -35,7 +35,7 @@ interface AuthContextValue extends AuthState {
   refreshSession: () => Promise<void>
 }
 
-const storageKey = "vta.auth.session"
+const storageKey = "gvc.auth.session"
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 const unauthenticatedBase = {

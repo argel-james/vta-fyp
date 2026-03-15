@@ -166,7 +166,7 @@ export default function LoginPage() {
             {/* Title */}
             <div className="flex flex-col items-center justify-center space-y-2">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent text-center tracking-wider">
-                Virtual Teaching Assistant
+                GenAI Virtual Classroom
               </h1>
             </div>
 

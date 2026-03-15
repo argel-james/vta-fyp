@@ -1,10 +1,10 @@
-"""SQLAlchemy models for authentication/session management."""
+"""SQLAlchemy models for authentication, sessions, and analytics."""
 from __future__ import annotations
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
 
 from db import Base
 from settings import get_settings
@@ -56,3 +56,35 @@ class SessionBlacklist(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     token_hash = Column(String(64), unique=True, nullable=False)
     revoked_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))
+
+
+class QueryLog(Base):
+    """Tracks every student query for analytics."""
+    __tablename__ = "query_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    course_id = Column(String(120), nullable=False, index=True)
+    question = Column(Text, nullable=False)
+    persona = Column(String(30), nullable=True)
+    topic_tag = Column(String(255), nullable=True)
+    confidence = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))
+
+
+class EventLog(Base):
+    """Generic event tracking for lessons, quizzes, engagement analytics."""
+    __tablename__ = "event_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    course_id = Column(String(120), nullable=False, index=True)
+    event_type = Column(String(60), nullable=False, index=True)
+    topic = Column(String(255), nullable=True, index=True)
+    quiz_id = Column(String(120), nullable=True)
+    question_index = Column(Integer, nullable=True)
+    score = Column(Float, nullable=True)
+    total = Column(Integer, nullable=True)
+    duration_seconds = Column(Float, nullable=True)
+    detail = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))

@@ -26,6 +26,7 @@ SQLAlchemy>=2.0
 PyMySQL
 python-jose[cryptography]
 azure-communication-email
+azure-storage-blob
 
 # Tooling / tests
 pytest
