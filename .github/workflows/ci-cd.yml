@@ -70,11 +70,6 @@ jobs:
       - name: Lint
         run: npx eslint . --max-warnings=50
 
-      - name: Build
-        env:
-          NEXT_PUBLIC_API_URL: https://vta-backend-app.azurewebsites.net
-        run: npm run build
-
   # ─────────────────────────────────────────────────────────────
   # Job 3: Build Docker images, push to ACR, deploy to App Service
   # ─────────────────────────────────────────────────────────────
