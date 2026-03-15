@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth-context"
 import { MessageBubble } from "./message-bubble"
 import { PersonaSelector } from "./persona-selector"
 import { ChatInput } from "./chat-input"
+import { VoiceChat } from "./voice-chat"
 
 interface ChatInterfaceProps {
   initialPrompt?: string | null
@@ -237,7 +238,17 @@ export const ChatInterface = forwardRef<HTMLDivElement, ChatInterfaceProps>(
         {/* Input */}
         <div className="border-t border-border bg-card/50 backdrop-blur-sm">
           <div className="max-w-3xl mx-auto w-full px-4 py-4">
-            <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} disabled={isLoading} />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} disabled={isLoading} />
+              </div>
+              <VoiceChat
+                onTranscription={(text) => { if (text) void handleSendMessage(text) }}
+                textToRead={messages.length > 1 ? messages[messages.length - 1]?.content : undefined}
+                token={token}
+                compact
+              />
+            </div>
           </div>
         </div>
       </div>

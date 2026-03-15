@@ -320,3 +320,224 @@ export async function decideRegistration(
   })
   return parseResponse(response)
 }
+
+// ─── Media (TTS / STT) ─────────────────────────────────────────────
+
+export async function textToSpeech(
+  text: string,
+  voice: string = "nova",
+  instructions?: string,
+  token?: string | null,
+): Promise<Blob> {
+  const body: Record<string, unknown> = { text, voice }
+  if (instructions) body.instructions = instructions
+  const response = await fetch(`${API_BASE_URL}/media/tts`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(err || "TTS failed")
+  }
+  return response.blob()
+}
+
+export async function speechToText(
+  audioBlob: Blob,
+  token?: string | null,
+): Promise<string> {
+  const form = new FormData()
+  form.append("file", audioBlob, "recording.webm")
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+  const response = await fetch(`${API_BASE_URL}/media/stt`, {
+    method: "POST",
+    headers,
+    body: form,
+  })
+  const data = await parseResponse<{ text: string }>(response)
+  return data.text || ""
+}
+
+export async function fetchVoices(token?: string | null): Promise<string[]> {
+  const response = await fetch(`${API_BASE_URL}/media/voices`, {
+    headers: authHeaders(token),
+  })
+  const data = await parseResponse<{ voices: string[] }>(response)
+  return data.voices || []
+}
+
+// ─── Interactive Learning ───────────────────────────────────────────
+
+export interface SocraticResponse {
+  response: string
+  metadata: { progress: number; hint_given: boolean; concept_targeted: string }
+  course_id: string
+  topic: string
+}
+
+export async function socraticTutor(
+  courseId: string,
+  topic: string,
+  studentMessage: string,
+  history?: HistoryMessage[],
+  learningLevel?: string,
+  token?: string | null,
+): Promise<SocraticResponse> {
+  const body: Record<string, unknown> = {
+    course_id: courseId,
+    topic,
+    student_message: studentMessage,
+    learning_level: learningLevel || "intermediate",
+  }
+  if (history && history.length > 0) body.history = history
+  const response = await fetch(`${API_BASE_URL}/interactive/socratic`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  return parseResponse(response)
+}
+
+export interface TeachBackResponse {
+  mastery_score: number
+  overall_feedback: string
+  correct_points: string[]
+  gaps: string[]
+  misconceptions: string[]
+  suggestions: string[]
+  improved_explanation: string
+  course_id: string
+  topic: string
+}
+
+export async function teachItBack(
+  courseId: string,
+  topic: string,
+  explanation: string,
+  learningLevel?: string,
+  token?: string | null,
+): Promise<TeachBackResponse> {
+  const response = await fetch(`${API_BASE_URL}/interactive/teach-back`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      course_id: courseId,
+      topic,
+      student_explanation: explanation,
+      learning_level: learningLevel || "intermediate",
+    }),
+  })
+  return parseResponse(response)
+}
+
+export interface ScenarioResponse {
+  narrative: string
+  feedback?: string
+  choices: string[]
+  scene_number: number
+  total_scenes: number
+  is_final?: boolean
+  score?: number
+  concept_being_tested?: string
+  concepts_learned?: string[]
+  course_id: string
+}
+
+export async function scenarioLearning(
+  courseId: string,
+  topic?: string,
+  choice?: string,
+  history?: HistoryMessage[],
+  learningLevel?: string,
+  token?: string | null,
+): Promise<ScenarioResponse> {
+  const body: Record<string, unknown> = {
+    course_id: courseId,
+    learning_level: learningLevel || "intermediate",
+  }
+  if (topic) body.topic = topic
+  if (choice) body.choice = choice
+  if (history && history.length > 0) body.history = history
+  const response = await fetch(`${API_BASE_URL}/interactive/scenario`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  return parseResponse(response)
+}
+
+export interface ConceptMapData {
+  title: string
+  nodes: { id: string; label: string; description: string; category: string; x: number; y: number }[]
+  edges: { from: string; to: string; label: string }[]
+  course_id: string
+  topic?: string
+}
+
+export async function generateConceptMap(
+  courseId: string,
+  topic?: string,
+  token?: string | null,
+): Promise<ConceptMapData> {
+  const response = await fetch(`${API_BASE_URL}/interactive/concept-map`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ course_id: courseId, topic: topic || null }),
+  })
+  return parseResponse(response)
+}
+
+export interface MistakeRevisionData {
+  weak_areas: {
+    concept: string
+    explanation: string
+    why_student_struggled: string
+    key_points: string[]
+    practice_questions: QuizQuestion[]
+  }[]
+  overall_advice: string
+  estimated_mastery: number
+  course_id: string
+}
+
+export async function revisionFromMistakes(
+  courseId: string,
+  mistakes: { question: string; student_answer: string; correct_answer: string; topic?: string }[],
+  learningLevel?: string,
+  token?: string | null,
+): Promise<MistakeRevisionData> {
+  const response = await fetch(`${API_BASE_URL}/interactive/revision-from-mistakes`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({
+      course_id: courseId,
+      mistakes,
+      learning_level: learningLevel || "intermediate",
+    }),
+  })
+  return parseResponse(response)
+}
+
+export interface IllustratedFlashcard {
+  front: string
+  back: string
+  svg: string
+  color: string
+}
+
+export async function fetchIllustratedFlashcards(
+  courseId: string,
+  topic?: string,
+  count: number = 4,
+  token?: string | null,
+): Promise<IllustratedFlashcard[]> {
+  const response = await fetch(`${API_BASE_URL}/interactive/illustrated-flashcards`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ course_id: courseId, topic: topic || null, count }),
+  })
+  const data = await parseResponse<{ flashcards: IllustratedFlashcard[] }>(response)
+  return data.flashcards || []
+}

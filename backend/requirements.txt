@@ -28,5 +28,9 @@ python-jose[cryptography]
 azure-communication-email
 azure-storage-blob
 
+# Azure OpenAI SDK (TTS / Whisper)
+openai>=1.0
+
 # Tooling / tests
 pytest
+httpx
