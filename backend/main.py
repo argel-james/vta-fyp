@@ -17,6 +17,8 @@ from settings import get_settings
 
 load_dotenv()
 
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

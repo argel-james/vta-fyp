@@ -193,7 +193,10 @@ async def get_student_analytics(
     for email, sd in student_data.items():
         avg = round(sd["total_score"] / sd["total_quizzes"], 1) if sd["total_quizzes"] else None
         weak_topics = [t for t, _ in sd["topics"].most_common(3)]
-        inactive_days = (datetime.now(tz) - sd["last_active"]).days if sd["last_active"] else None
+        _la = sd["last_active"]
+        if _la and _la.tzinfo is None:
+            _la = _la.replace(tzinfo=tz)
+        inactive_days = (datetime.now(tz) - _la).days if _la else None
 
         risk = "low"
         if avg is not None and avg < 50:
@@ -496,8 +499,12 @@ def _compute_at_risk(queries, events, cutoff) -> list[dict]:
     results = []
     for email, si in student_info.items():
         reasons = []
-        if si["last_active"] and (now - si["last_active"]).days > 7:
-            reasons.append("inactive")
+        last = si["last_active"]
+        if last:
+            if last.tzinfo is None:
+                last = last.replace(tzinfo=tz)
+            if (now - last).days > 7:
+                reasons.append("inactive")
         if si["low_scores"] >= 2:
             reasons.append("repeated_low_scores")
         if si["quiz_count"] == 0:

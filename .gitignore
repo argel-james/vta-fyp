@@ -13,4 +13,9 @@ __pycache__/
 # macOS
 .DS_Store
 
+# Secrets
 backend/.env
+
+# Course data & FAISS indexes (large/binary files)
+backend/data/
+backend/index/

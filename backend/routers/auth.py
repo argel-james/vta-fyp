@@ -12,20 +12,25 @@ from db import get_db
 from models import Session as SessionModel, UserInfo
 from repositories import (
     add_session_blacklist,
+    approve_register_request,
     clear_user_otp,
     create_or_update_user_otp,
     create_register_request,
     create_session,
     deactivate_session,
     get_register_request_by_email,
+    get_register_request_by_id,
     get_session_by_id,
     get_user_by_email,
     is_token_blacklisted,
+    list_register_requests,
+    reject_register_request,
 )
 from schemas import (
     LoginRequest,
     MessageResponse,
     RegisterRequestCreate,
+    RegisterRequestDecision,
     SessionDetails,
     VerifyOtpRequest,
     VerifyOtpResponse,
@@ -199,3 +204,65 @@ def logout(
     add_session_blacklist(db, context.token_hash)
     deactivate_session(db, context.session)
     return MessageResponse(message="Logged out successfully.")
+
+
+def _require_professor(db: Session, authorization: str | None) -> AuthenticatedSession:
+    context = _get_authenticated_session(db, authorization)
+    if context.user.role != "professor":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Professors only")
+    return context
+
+
+@router.get("/registrations")
+def get_registrations(
+    status_filter: str | None = None,
+    authorization: TokenHeader = None,
+    db: Session = Depends(get_db),
+):
+    _require_professor(db, authorization)
+    regs = list_register_requests(db, status_filter=status_filter)
+    return {
+        "registrations": [
+            {
+                "id": r.id,
+                "email": r.email,
+                "role": r.role,
+                "division": r.division or "",
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in regs
+        ]
+    }
+
+
+@router.post("/registrations/decide", response_model=MessageResponse)
+def decide_registration(
+    payload: RegisterRequestDecision,
+    authorization: TokenHeader = None,
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    _require_professor(db, authorization)
+
+    reg = get_register_request_by_id(db, payload.request_id)
+    if not reg:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registration request not found")
+
+    if reg.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Request already {reg.status}",
+        )
+
+    if payload.approve:
+        existing_user = get_user_by_email(db, reg.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User account already exists for this email",
+            )
+        approve_register_request(db, reg)
+        return MessageResponse(message=f"Approved registration for {reg.email}")
+    else:
+        reject_register_request(db, reg)
+        return MessageResponse(message=f"Rejected registration for {reg.email}")

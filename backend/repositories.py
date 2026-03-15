@@ -93,3 +93,31 @@ def is_token_blacklisted(db: Session, token_hash: str) -> bool:
         db.execute(select(SessionBlacklist).where(SessionBlacklist.token_hash == token_hash)).scalar_one_or_none()
         is not None
     )
+
+
+def list_register_requests(db: Session, status_filter: str | None = None) -> list[RegisterRequest]:
+    stmt = select(RegisterRequest).order_by(RegisterRequest.created_at.desc())
+    if status_filter:
+        stmt = stmt.where(RegisterRequest.status == status_filter)
+    return list(db.execute(stmt).scalars().all())
+
+
+def get_register_request_by_id(db: Session, request_id: int) -> RegisterRequest | None:
+    return db.execute(select(RegisterRequest).where(RegisterRequest.id == request_id)).scalar_one_or_none()
+
+
+def approve_register_request(db: Session, reg: RegisterRequest) -> UserInfo:
+    reg.status = "approved"
+    db.add(reg)
+
+    user = UserInfo(email=reg.email, role=reg.role, division=reg.division, is_active=True)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def reject_register_request(db: Session, reg: RegisterRequest) -> None:
+    reg.status = "rejected"
+    db.add(reg)
+    db.commit()

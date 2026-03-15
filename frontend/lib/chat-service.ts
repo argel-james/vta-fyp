@@ -2,12 +2,18 @@ import type { Flashcard, PersonaMode, QuizQuestion } from "@/types"
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "")
 
+interface HistoryMessage {
+  role: "user" | "assistant"
+  content: string
+}
+
 interface AskRequest {
   question: string
   courseId?: string
   token?: string | null
   persona?: PersonaMode
   learningLevel?: "beginner" | "intermediate" | "advanced"
+  history?: HistoryMessage[]
 }
 
 export interface SourceInfo {
@@ -54,38 +60,28 @@ function authHeaders(token?: string | null) {
   return headers
 }
 
-function buildPersonaPrompt(persona: PersonaMode | undefined, level: AskRequest["learningLevel"]) {
-  if (!persona && !level) return ""
-  const parts: string[] = []
-  if (level) {
-    parts.push(`Learning level: ${level}`)
-  }
-  if (persona) {
-    const personaGuidance: Record<PersonaMode, string> = {
-      standard: "Provide clear, structured tutoring with step-by-step guidance.",
-      advocate: "Challenge assumptions and explore counter-arguments before concluding.",
-      joker: "Keep tone light and memorable while staying accurate.",
-      socratic: "Prefer asking guiding questions that help the student derive the answer.",
-    }
-    parts.push(`Persona: ${personaGuidance[persona]}`)
-  }
-  return parts.length ? `\n\n${parts.join(" \n")}` : ""
-}
-
 export async function askQuestion({
   question,
   courseId = "sc2107",
   token,
-  persona,
-  learningLevel,
+  persona = "standard",
+  learningLevel = "intermediate",
+  history,
 }: AskRequest): Promise<AskResponse> {
+  const body: Record<string, unknown> = {
+    question,
+    course_id: courseId,
+    persona,
+    learning_level: learningLevel,
+  }
+  if (history && history.length > 0) {
+    body.history = history
+  }
+
   const response = await fetch(`${API_BASE_URL}/rag/ask`, {
     method: "POST",
     headers: authHeaders(token ?? undefined),
-    body: JSON.stringify({
-      question: `${question}${buildPersonaPrompt(persona, learningLevel)}`,
-      course_id: courseId,
-    }),
+    body: JSON.stringify(body),
   })
 
   const data = await parseResponse<{
@@ -286,6 +282,41 @@ export async function fetchAlerts(
   if (courseId) params.set("course_id", courseId)
   const response = await fetch(`${API_BASE_URL}/analytics/alerts?${params}`, {
     headers: authHeaders(token),
+  })
+  return parseResponse(response)
+}
+
+export interface RegistrationRecord {
+  id: number
+  email: string
+  role: string
+  division: string
+  status: string
+  created_at: string | null
+}
+
+export async function fetchRegistrations(
+  statusFilter?: string,
+  token?: string | null,
+): Promise<RegistrationRecord[]> {
+  const params = new URLSearchParams()
+  if (statusFilter) params.set("status_filter", statusFilter)
+  const response = await fetch(`${API_BASE_URL}/auth/registrations?${params}`, {
+    headers: authHeaders(token),
+  })
+  const data = await parseResponse<{ registrations: RegistrationRecord[] }>(response)
+  return data.registrations || []
+}
+
+export async function decideRegistration(
+  requestId: number,
+  approve: boolean,
+  token?: string | null,
+): Promise<{ message: string }> {
+  const response = await fetch(`${API_BASE_URL}/auth/registrations/decide`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ request_id: requestId, approve }),
   })
   return parseResponse(response)
 }

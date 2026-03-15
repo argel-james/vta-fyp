@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from threading import Lock
-from typing import Any, List
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from rag_core.chain import build_rag_chain, answer_question
 from rag_core.config import AzureSettings
@@ -22,10 +22,18 @@ router = APIRouter(
     tags=["RAG - Question Answering"]
 )
 
-# Pydantic models
+
+class HistoryMessage(BaseModel):
+    role: str
+    content: str
+
+
 class QuestionRequest(BaseModel):
     question: str
     course_id: str = "sc2107"
+    persona: str = Field(default="standard", pattern="^(standard|advocate|joker|socratic)$")
+    learning_level: str = Field(default="intermediate", pattern="^(beginner|intermediate|advanced)$")
+    history: Optional[List[HistoryMessage]] = None
 
 class QuestionResponse(BaseModel):
     answer: str
@@ -100,40 +108,45 @@ def _evict_course(course_id: str) -> bool:
         return _rag_cache.pop(course_id, None) is not None
     
 @router.post("/ask", response_model=QuestionResponse)
-async def ask_question(
+async def ask_question_endpoint(
     request: QuestionRequest,
     app_settings: Settings = Depends(get_app_settings),
 ):
-    """
-    Ask a question to the RAG system for a specific course
-    """
+    """Ask a question with persona-aware, level-adapted RAG."""
     try:
         rag_components = _get_rag_components(request.course_id, app_settings)
-        chain = rag_components.chain
-        retriever = rag_components.retriever
-        
-        answer = answer_question(chain, retriever, request.question)
-        
-        # Format sources
-        sources = []
-        if answer.sources:
-            sources = [
-                {
-                    "file": s.file,
-                    "page": s.page,
-                    "content": getattr(s, 'content', None)
-                }
-                for s in answer.sources
-            ]
-        
+        azure_settings = get_azure_settings()
+
+        history_dicts = (
+            [{"role": m.role, "content": m.content} for m in request.history]
+            if request.history
+            else None
+        )
+
+        result = answer_question(
+            rag_components.chain,
+            rag_components.retriever,
+            request.question,
+            persona=request.persona,
+            learning_level=request.learning_level,
+            history=history_dicts,
+            settings=azure_settings,
+        )
+
+        sources = [
+            {"file": s.file, "page": s.page, "content": getattr(s, "content", None)}
+            for s in result.sources
+        ] if result.sources else []
+
         return QuestionResponse(
-            answer=answer.text,
+            answer=result.text,
             sources=sources,
-            course_id=request.course_id
+            course_id=request.course_id,
         )
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("RAG ask failed")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/courses", response_model=CourseListResponse)

@@ -11,9 +11,12 @@ import {
   getIndexingStatus,
   uploadDocuments,
   buildIndex,
+  fetchRegistrations,
+  decideRegistration,
+  type RegistrationRecord,
 } from "@/lib/chat-service"
 
-type Tab = "upload" | "status" | "personas" | "analytics"
+type Tab = "upload" | "status" | "personas" | "analytics" | "registrations"
 
 interface DocFile {
   filename: string
@@ -55,6 +58,12 @@ export default function ProfessorDashboard() {
     { id: "joker", name: "Joker", description: "Makes learning fun with humor", enabled: true },
     { id: "socratic", name: "Socratic", description: "Guides through thoughtful questions", enabled: false },
   ])
+
+  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([])
+  const [regFilter, setRegFilter] = useState<string>("pending")
+  const [regLoading, setRegLoading] = useState(false)
+  const [regAction, setRegAction] = useState<number | null>(null)
+  const [regMessage, setRegMessage] = useState("")
 
   useEffect(() => {
     fetchCourses(token).then((c) => {
@@ -121,6 +130,37 @@ export default function ProfessorDashboard() {
     }
   }
 
+  const loadRegistrations = useCallback(async () => {
+    setRegLoading(true)
+    setRegMessage("")
+    try {
+      const regs = await fetchRegistrations(regFilter || undefined, token)
+      setRegistrations(regs)
+    } catch {
+      setRegistrations([])
+    } finally {
+      setRegLoading(false)
+    }
+  }, [regFilter, token])
+
+  useEffect(() => {
+    if (tab === "registrations") void loadRegistrations()
+  }, [tab, loadRegistrations])
+
+  const handleDecide = async (requestId: number, approve: boolean) => {
+    setRegAction(requestId)
+    setRegMessage("")
+    try {
+      const result = await decideRegistration(requestId, approve, token)
+      setRegMessage(result.message)
+      await loadRegistrations()
+    } catch (err) {
+      setRegMessage(err instanceof Error ? err.message : "Action failed")
+    } finally {
+      setRegAction(null)
+    }
+  }
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -130,6 +170,7 @@ export default function ProfessorDashboard() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "upload", label: "Upload Materials" },
     { key: "status", label: "Ingestion Status" },
+    { key: "registrations", label: "Registrations" },
     { key: "personas", label: "Class Personas" },
     { key: "analytics", label: "Analytics" },
   ]
@@ -311,6 +352,127 @@ export default function ProfessorDashboard() {
                     </table>
                   </div>
                 )}
+              </Card>
+            </div>
+          )}
+
+          {/* Registrations Tab */}
+          {tab === "registrations" && (
+            <div className="space-y-6">
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <h2 className="text-xl font-semibold text-foreground">User Registrations</h2>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={regFilter}
+                      onChange={(e) => setRegFilter(e.target.value)}
+                      className="px-3 py-1.5 bg-background border border-border rounded-lg text-foreground text-sm"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="">All</option>
+                    </select>
+                    <Button variant="outline" size="sm" onClick={() => void loadRegistrations()} disabled={regLoading}>
+                      {regLoading ? "Loading..." : "Refresh"}
+                    </Button>
+                  </div>
+                </div>
+
+                {regMessage && (
+                  <p className={`text-sm ${regMessage.toLowerCase().includes("rejected") ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400"}`}>
+                    {regMessage}
+                  </p>
+                )}
+
+                {registrations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    {regLoading ? "Loading registrations..." : "No registrations found."}
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2.5 px-3 text-sm font-semibold text-foreground">Email</th>
+                          <th className="text-left py-2.5 px-3 text-sm font-semibold text-foreground">Role</th>
+                          <th className="text-left py-2.5 px-3 text-sm font-semibold text-foreground">Division</th>
+                          <th className="text-left py-2.5 px-3 text-sm font-semibold text-foreground">Status</th>
+                          <th className="text-left py-2.5 px-3 text-sm font-semibold text-foreground">Requested</th>
+                          {regFilter === "pending" && (
+                            <th className="text-right py-2.5 px-3 text-sm font-semibold text-foreground">Actions</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registrations.map((r) => (
+                          <tr key={r.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
+                            <td className="py-2.5 px-3 text-sm text-foreground font-medium">{r.email}</td>
+                            <td className="py-2.5 px-3">
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                r.role === "professor"
+                                  ? "bg-purple-500/15 text-purple-700 dark:text-purple-300"
+                                  : "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                              }`}>
+                                {r.role}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-sm text-muted-foreground">{r.division || "—"}</td>
+                            <td className="py-2.5 px-3">
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                r.status === "pending"
+                                  ? "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300"
+                                  : r.status === "approved"
+                                    ? "bg-green-500/15 text-green-700 dark:text-green-300"
+                                    : "bg-red-500/15 text-red-700 dark:text-red-300"
+                              }`}>
+                                {r.status}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-sm text-muted-foreground">
+                              {r.created_at
+                                ? new Date(r.created_at).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "—"}
+                            </td>
+                            {regFilter === "pending" && (
+                              <td className="py-2.5 px-3 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => void handleDecide(r.id, true)}
+                                    disabled={regAction === r.id}
+                                    className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                                  >
+                                    {regAction === r.id ? "..." : "Approve"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => void handleDecide(r.id, false)}
+                                    disabled={regAction === r.id}
+                                    className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                                  >
+                                    {regAction === r.id ? "..." : "Reject"}
+                                  </Button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground">
+                  {registrations.length} registration{registrations.length !== 1 ? "s" : ""} shown
+                </div>
               </Card>
             </div>
           )}
