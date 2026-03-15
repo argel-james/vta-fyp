@@ -5,27 +5,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 
-def test_summary_returns_404_for_missing_course(client):
-    response = client.post("/content/summary", json={"course_id": "no-course"})
-    assert response.status_code == 404
-
-
-def test_flashcards_returns_404_for_missing_course(client):
-    response = client.post(
-        "/content/flashcards",
-        json={"course_id": "no-course", "count": 3},
-    )
-    assert response.status_code == 404
-
-
-def test_quiz_returns_404_for_missing_course(client):
-    response = client.post(
-        "/content/quiz",
-        json={"course_id": "no-course", "count": 3},
-    )
-    assert response.status_code == 404
-
-
 def _make_mock_retriever():
     doc = MagicMock()
     doc.page_content = "Photosynthesis converts light energy to chemical energy."
@@ -33,6 +12,45 @@ def _make_mock_retriever():
     retriever = MagicMock()
     retriever.invoke.return_value = [doc]
     return retriever
+
+
+def _mock_azure():
+    """Return a patch for AzureSettings that skips validation."""
+    mock_settings = MagicMock()
+    mock_settings.chat_endpoint = "https://fake.openai.azure.com/"
+    mock_settings.chat_key = "fake"
+    mock_settings.chat_api_version = "2024-12-01-preview"
+    mock_settings.chat_deployment = "gpt-4o-mini"
+    mock_settings.embed_endpoint = "https://fake.openai.azure.com/"
+    mock_settings.embed_key = "fake"
+    mock_settings.embed_api_version = "2024-12-01-preview"
+    mock_settings.embed_deployment = "text-embedding-3-small"
+    mock_settings.embed_dimensions = 1536
+    return patch("routers.content.AzureSettings", return_value=mock_settings)
+
+
+@_mock_azure()
+def test_summary_returns_404_for_missing_course(_, client):
+    response = client.post("/content/summary", json={"course_id": "no-course"})
+    assert response.status_code == 404
+
+
+@_mock_azure()
+def test_flashcards_returns_404_for_missing_course(_, client):
+    response = client.post(
+        "/content/flashcards",
+        json={"course_id": "no-course", "count": 3},
+    )
+    assert response.status_code == 404
+
+
+@_mock_azure()
+def test_quiz_returns_404_for_missing_course(_, client):
+    response = client.post(
+        "/content/quiz",
+        json={"course_id": "no-course", "count": 3},
+    )
+    assert response.status_code == 404
 
 
 @patch("routers.content._get_retriever")

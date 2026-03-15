@@ -14,7 +14,22 @@ def _make_mock_retriever():
     return retriever
 
 
-def test_socratic_returns_404_for_missing_course(client):
+def _mock_azure():
+    mock_settings = MagicMock()
+    mock_settings.chat_endpoint = "https://fake.openai.azure.com/"
+    mock_settings.chat_key = "fake"
+    mock_settings.chat_api_version = "2024-12-01-preview"
+    mock_settings.chat_deployment = "gpt-4o-mini"
+    mock_settings.embed_endpoint = "https://fake.openai.azure.com/"
+    mock_settings.embed_key = "fake"
+    mock_settings.embed_api_version = "2024-12-01-preview"
+    mock_settings.embed_deployment = "text-embedding-3-small"
+    mock_settings.embed_dimensions = 1536
+    return patch("routers.interactive.AzureSettings", return_value=mock_settings)
+
+
+@_mock_azure()
+def test_socratic_returns_404_for_missing_course(_, client):
     response = client.post(
         "/interactive/socratic",
         json={"course_id": "no-course", "topic": "test", "student_message": "hi"},
@@ -22,7 +37,8 @@ def test_socratic_returns_404_for_missing_course(client):
     assert response.status_code == 404
 
 
-def test_teach_back_returns_404_for_missing_course(client):
+@_mock_azure()
+def test_teach_back_returns_404_for_missing_course(_, client):
     response = client.post(
         "/interactive/teach-back",
         json={"course_id": "no-course", "topic": "test", "student_explanation": "something"},
@@ -30,7 +46,8 @@ def test_teach_back_returns_404_for_missing_course(client):
     assert response.status_code == 404
 
 
-def test_concept_map_returns_404_for_missing_course(client):
+@_mock_azure()
+def test_concept_map_returns_404_for_missing_course(_, client):
     response = client.post(
         "/interactive/concept-map",
         json={"course_id": "no-course"},
@@ -38,7 +55,8 @@ def test_concept_map_returns_404_for_missing_course(client):
     assert response.status_code == 404
 
 
-def test_scenario_returns_404_for_missing_course(client):
+@_mock_azure()
+def test_scenario_returns_404_for_missing_course(_, client):
     response = client.post(
         "/interactive/scenario",
         json={"course_id": "no-course"},

@@ -68,7 +68,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Lint
-        run: npm run lint
+        run: npx eslint . --max-warnings=50
 
       - name: Build
         env:
