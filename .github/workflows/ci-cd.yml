@@ -120,19 +120,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Deploy backend to Azure App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: vta-backend-app
-          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
-          images: ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+      - name: Deploy backend container
+        run: |
+          BACKEND_USER=$(echo '${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}' | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
+          BACKEND_PASS=$(echo '${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}' | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
 
-      - name: Deploy frontend to Azure App Service
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: vta-frontend-app
-          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
-          images: ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          curl -s -X POST \
+            "https://vta-backend-app.scm.azurewebsites.net/api/settings" \
+            -u "${BACKEND_USER}:${BACKEND_PASS}" \
+            -H "Content-Type: application/json" \
+            -d '{"DOCKER_CUSTOM_IMAGE_NAME":"${{ env.BACKEND_IMAGE }}:${{ github.sha }}","DOCKER_REGISTRY_SERVER_URL":"https://${{ env.ACR_LOGIN_SERVER }}","DOCKER_REGISTRY_SERVER_USERNAME":"${{ secrets.ACR_USERNAME }}","DOCKER_REGISTRY_SERVER_PASSWORD":"${{ secrets.ACR_PASSWORD }}"}'
+
+          echo "Backend container image updated"
+
+      - name: Deploy frontend container
+        run: |
+          FRONTEND_USER=$(echo '${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}' | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
+          FRONTEND_PASS=$(echo '${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}' | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
+
+          curl -s -X POST \
+            "https://vta-frontend-app.scm.azurewebsites.net/api/settings" \
+            -u "${FRONTEND_USER}:${FRONTEND_PASS}" \
+            -H "Content-Type: application/json" \
+            -d '{"DOCKER_CUSTOM_IMAGE_NAME":"${{ env.FRONTEND_IMAGE }}:${{ github.sha }}","DOCKER_REGISTRY_SERVER_URL":"https://${{ env.ACR_LOGIN_SERVER }}","DOCKER_REGISTRY_SERVER_USERNAME":"${{ secrets.ACR_USERNAME }}","DOCKER_REGISTRY_SERVER_PASSWORD":"${{ secrets.ACR_PASSWORD }}"}'
+
+          echo "Frontend container image updated"
 
       - name: Verify deployments
         run: |
