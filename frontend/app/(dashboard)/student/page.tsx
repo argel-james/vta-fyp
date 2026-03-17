@@ -5,6 +5,51 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 
+const interactiveFeatures = [
+  {
+    icon: "🧙‍♂️",
+    label: "Socratic Tutor",
+    href: "/socratic",
+    description: "Guided questioning that helps you discover answers on your own.",
+    color: "bg-purple-500/10 border-purple-500/20",
+  },
+  {
+    icon: "🎓",
+    label: "Teach-It-Back",
+    href: "/teach-back",
+    description: "Explain concepts back to the AI to solidify your understanding.",
+    color: "bg-blue-500/10 border-blue-500/20",
+  },
+  {
+    icon: "🗺️",
+    label: "Concept Map",
+    href: "/concept-map",
+    description: "Visualise how topics connect with interactive concept maps.",
+    color: "bg-emerald-500/10 border-emerald-500/20",
+  },
+  {
+    icon: "🎮",
+    label: "Scenarios",
+    href: "/scenarios",
+    description: "Apply knowledge through realistic, branching scenario challenges.",
+    color: "bg-orange-500/10 border-orange-500/20",
+  },
+  {
+    icon: "🎨",
+    label: "Picture Cards",
+    href: "/illustrated",
+    description: "Visual flashcards with AI-generated illustrations for memory.",
+    color: "bg-pink-500/10 border-pink-500/20",
+  },
+  {
+    icon: "📓",
+    label: "Mistake Journal",
+    href: "/revision",
+    description: "Review past mistakes and get targeted revision material.",
+    color: "bg-amber-500/10 border-amber-500/20",
+  },
+]
+
 export default function StudentLandingPage() {
   const { user } = useAuth()
 
@@ -18,10 +63,10 @@ export default function StudentLandingPage() {
   return (
     <div className="flex-1 w-full overflow-y-auto bg-gradient-to-br from-background via-background to-secondary/5">
       <div className="flex justify-center min-h-full">
-        <main className="w-full max-w-6xl px-8 py-8 space-y-8">
+        <main className="w-full max-w-6xl px-4 sm:px-8 py-6 sm:py-8 space-y-8">
           {/* Welcome Section */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}
             </h1>
             <p className="text-muted-foreground">GenAI Virtual Classroom</p>
@@ -29,9 +74,9 @@ export default function StudentLandingPage() {
           </div>
 
           {/* Main Cards */}
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
             {/* Chat with Assistant */}
-            <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
+            <Card className="p-5 sm:p-6 space-y-4 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +96,7 @@ export default function StudentLandingPage() {
             </Card>
 
             {/* Creative Discussions */}
-            <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow">
+            <Card className="p-5 sm:p-6 space-y-4 hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +122,7 @@ export default function StudentLandingPage() {
             </Card>
 
             {/* Learn & Play */}
-            <Card className="p-6 space-y-4 hover:shadow-lg transition-shadow border-2 border-dashed border-primary/30">
+            <Card className="p-5 sm:p-6 space-y-4 hover:shadow-lg transition-shadow border-2 border-dashed border-primary/30">
               <div className="flex items-start gap-3">
                 <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl">🎮</span>
@@ -93,6 +138,45 @@ export default function StudentLandingPage() {
                 </div>
               </div>
             </Card>
+          </div>
+
+          {/* Interactive Features */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">Interactive</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Deep-learning tools that go beyond Q&A.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              {interactiveFeatures.map((feature) => (
+                <Link key={feature.href} href={feature.href} className="group">
+                  <Card
+                    className={`p-4 sm:p-5 h-full border transition-all hover:shadow-md hover:-translate-y-0.5 ${feature.color}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0 mt-0.5">{feature.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                          {feature.label}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                      <svg
+                        className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors flex-shrink-0 mt-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
         </main>
       </div>

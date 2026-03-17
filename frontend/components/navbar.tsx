@@ -44,7 +44,7 @@ export function Navbar({ theme, onToggleTheme, onToggleSidebar, userRole = "stud
           <div className="flex items-center gap-3">
             <button
               onClick={onToggleSidebar}
-              className="hidden lg:block p-2 hover:bg-secondary rounded-lg transition-colors"
+              className="p-2 hover:bg-secondary rounded-lg transition-colors"
               title="Toggle sidebar"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

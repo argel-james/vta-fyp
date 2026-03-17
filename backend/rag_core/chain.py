@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Optional
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import AzureChatOpenAI
@@ -104,7 +105,8 @@ def _format_docs(docs) -> str:
         src = d.metadata.get("source", "unknown")
         page = d.metadata.get("page")
         tag = Path(src).name + (f":p{page}" if page is not None else "")
-        blocks.append(f"[{tag}]\n{d.page_content}")
+        content = d.page_content.replace("{", "{{").replace("}", "}}")
+        blocks.append(f"[{tag}]\n{content}")
     return "\n\n".join(blocks)
 
 
@@ -160,24 +162,22 @@ def answer_question(
 
     system_prompt = _build_system_prompt(persona, learning_level)
 
-    messages: list[tuple[str, str]] = [("system", system_prompt)]
+    lc_messages = [SystemMessage(content=system_prompt)]
 
     if history:
         for msg in history[-6:]:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role == "user":
-                messages.append(("human", content))
+                lc_messages.append(HumanMessage(content=content))
             elif role == "assistant":
-                messages.append(("ai", content))
+                lc_messages.append(AIMessage(content=content))
 
-    messages.append(("human", f"Context:\n{context}\n\nQuestion: {question}"))
-
-    prompt = ChatPromptTemplate.from_messages(messages)
+    lc_messages.append(HumanMessage(content=f"Context:\n{context}\n\nQuestion: {question}"))
 
     if llm is not None:
-        pipeline = prompt | llm | StrOutputParser()
-        text = pipeline.invoke({})
+        result = llm.invoke(lc_messages)
+        text = result.content
     else:
         text = chain.invoke(question)
 
