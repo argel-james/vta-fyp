@@ -204,7 +204,7 @@ export default function AnalyticsPage() {
                 <Card className="p-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">Learning Funnel</h3>
                   <div className="space-y-3">
-                    {(engagement.funnel as any[]).map((step: any, idx: number) => {
+                    {(engagement.funnel as any[]).map((step: any, _idx: number) => {
                       const maxCount = Math.max(...(engagement.funnel as any[]).map((s: any) => s.count), 1)
                       return (
                         <div key={step.step} className="flex items-center gap-3">

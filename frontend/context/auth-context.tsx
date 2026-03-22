@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       latestTokenRef.current = parsed.token
       setShouldValidateStoredSession(true)
-    } catch (error) {
+    } catch (_error) {
       window.localStorage.removeItem(storageKey)
       setUnauthenticated()
     } finally {

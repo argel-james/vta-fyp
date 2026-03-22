@@ -13,7 +13,7 @@ async function parseResponse<T = Record<string, unknown>>(response: Response): P
   if (text) {
     try {
       data = JSON.parse(text)
-    } catch (error) {
+    } catch (_error) {
       throw new Error("Unexpected response from server")
     }
   }

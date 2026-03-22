@@ -24,7 +24,7 @@ export default function ScenariosPage() {
   const [loading, setLoading] = useState(false)
   const [scene, setScene] = useState<ScenarioResponse | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [pastFeedback, setPastFeedback] = useState<string[]>([])
+  const [, setPastFeedback] = useState<string[]>([])
 
   useEffect(() => {
     fetchCourses(token).then(setCourses).catch(() => {})

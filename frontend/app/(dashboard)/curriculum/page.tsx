@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import { CurriculumCalendar } from "@/components/curriculum-calendar"
@@ -223,7 +223,6 @@ export default function CurriculumPage() {
     const weeks = getWeekGroups(activeCurr)
     const maxWeek = Math.max(...weeks.map(([w]) => w), 1)
     return Math.min(Math.ceil((completed.length / total) * maxWeek) + 1, maxWeek)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curricula])
 
   function buildDeepLink(action: typeof QUICK_ACTIONS[number], courseId: string, topicName: string) {
