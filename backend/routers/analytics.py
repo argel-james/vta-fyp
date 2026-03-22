@@ -98,10 +98,14 @@ async def get_overview(
 
     queries = db.query(QueryLog).filter(q_filter).all()
     events = db.query(EventLog).filter(e_filter).all()
-    students = db.query(UserInfo).filter(UserInfo.role == "student", UserInfo.is_active == True).all()  # noqa: E712
 
-    total_students = len(students)
     active_emails = {r.email for r in queries} | {r.email for r in events}
+
+    if course_id:
+        total_students = len(active_emails)
+    else:
+        all_students = db.query(UserInfo).filter(UserInfo.role == "student", UserInfo.is_active == True).all()  # noqa: E712
+        total_students = len(all_students)
     active_students = len(active_emails)
 
     quiz_events = [e for e in events if e.event_type == "quiz_completed" and e.score is not None and e.total]
@@ -166,15 +170,13 @@ async def get_student_analytics(
     student_data: dict[str, dict[str, Any]] = defaultdict(lambda: {
         "queries": 0, "quizzes": 0, "avg_score": 0.0,
         "total_score": 0.0, "total_quizzes": 0,
-        "topics": Counter(), "last_active": None,
+        "failed_topics": Counter(), "last_active": None,
         "events": 0,
     })
 
     for r in queries:
         sd = student_data[r.email]
         sd["queries"] += 1
-        if r.topic_tag:
-            sd["topics"][r.topic_tag] += 1
         if r.created_at:
             if sd["last_active"] is None or r.created_at > sd["last_active"]:
                 sd["last_active"] = r.created_at
@@ -185,6 +187,8 @@ async def get_student_analytics(
         if e.event_type == "quiz_completed" and e.score is not None and e.total:
             sd["total_score"] += e.score / e.total * 100
             sd["total_quizzes"] += 1
+        if e.event_type == "answer_result" and e.topic and e.detail == "incorrect":
+            sd["failed_topics"][e.topic] += 1
         if e.created_at:
             if sd["last_active"] is None or e.created_at > sd["last_active"]:
                 sd["last_active"] = e.created_at
@@ -192,7 +196,7 @@ async def get_student_analytics(
     results = []
     for email, sd in student_data.items():
         avg = round(sd["total_score"] / sd["total_quizzes"], 1) if sd["total_quizzes"] else None
-        weak_topics = [t for t, _ in sd["topics"].most_common(3)]
+        weak_topics = [t for t, _ in sd["failed_topics"].most_common(3)]
         _la = sd["last_active"]
         if _la and _la.tzinfo is None:
             _la = _la.replace(tzinfo=tz)
@@ -386,9 +390,10 @@ async def get_engagement_analytics(
     dau = {d: len(s) for d, s in sorted(daily_active.items())}
     wau = {w: len(s) for w, s in sorted(weekly_active.items())}
 
-    total_duration = sum(e.duration_seconds for e in events if e.duration_seconds)
-    session_count = len([e for e in events if e.event_type in ("quiz_started", "lesson_opened")])
-    avg_session = round(total_duration / session_count, 1) if session_count else 0
+    session_types = ("quiz_started", "lesson_opened")
+    session_events = [e for e in events if e.event_type in session_types]
+    total_duration = sum(e.duration_seconds for e in session_events if e.duration_seconds)
+    avg_session = round(total_duration / len(session_events), 1) if session_events else 0
 
     event_funnel: Counter[str] = Counter()
     for e in events:
