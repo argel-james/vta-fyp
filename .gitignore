@@ -16,6 +16,8 @@ __pycache__/
 # Secrets
 backend/.env
 
-# Course data & FAISS indexes (large/binary files)
+# Course data (raw uploads, potentially large)
 backend/data/
-backend/index/
+
+# NOTE: backend/index/ is NOT ignored — FAISS indexes are small (<10 MB total)
+# and must be shipped with the image so courses persist across deploys.
