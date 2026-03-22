@@ -68,8 +68,13 @@ def get_azure_settings() -> AzureSettings:
 
 
 def _build_rag_components(course_id: str, app_settings: Settings) -> RagComponents:
+    from utils.blob_storage import download_index
+
     azure_settings = get_azure_settings()
     index_path = app_settings.index_dir / course_id
+
+    if not index_path.exists():
+        download_index(course_id)
 
     if not index_path.exists():
         raise HTTPException(
@@ -151,15 +156,17 @@ async def ask_question_endpoint(
 
 @router.get("/courses", response_model=CourseListResponse)
 async def list_courses(app_settings: Settings = Depends(get_app_settings)):
-    """
-    List all available courses with RAG indices
-    """
+    """List all available courses with RAG indices."""
+    from utils.blob_storage import list_blob_courses
+
     index_dir = app_settings.index_dir
-    if not index_dir.exists():
-        return CourseListResponse(courses=[])
-    
-    courses = [d.name for d in index_dir.iterdir() if d.is_dir()]
-    return CourseListResponse(courses=courses)
+    local_courses: set[str] = set()
+    if index_dir.exists():
+        local_courses = {d.name for d in index_dir.iterdir() if d.is_dir()}
+
+    blob_courses = list_blob_courses()
+    all_courses = sorted(local_courses | set(blob_courses))
+    return CourseListResponse(courses=all_courses)
 
 @router.get("/courses/{course_id}", response_model=CourseInfo)
 async def get_course_info(

@@ -541,3 +541,155 @@ export async function fetchIllustratedFlashcards(
   const data = await parseResponse<{ flashcards: IllustratedFlashcard[] }>(response)
   return data.flashcards || []
 }
+
+// ─── Curriculum ─────────────────────────────────────────────────────
+
+export interface CurriculumTopicItem {
+  id: number
+  order_index: number
+  topic_name: string
+  item_type: "study_session" | "quiz"
+  subtopics: string[]
+  target_date: string | null
+  estimated_hours: number | null
+  status: "not_started" | "in_progress" | "completed" | "skipped"
+  quiz_config: { question_count?: number; difficulty?: string } | null
+}
+
+export interface CurriculumRecord {
+  id: number
+  course_id: string
+  title: string
+  status: "active" | "completed" | "archived"
+  progress_percent: number
+  class_day: string | null
+  class_start_time: string | null
+  class_end_time: string | null
+  created_at: string
+  topics: CurriculumTopicItem[]
+}
+
+export interface CourseTopic {
+  name: string
+  topic_number: number | null
+  week: number | null
+  source: string
+}
+
+export interface PlanItem {
+  item_type: "study_session" | "quiz"
+  topic_name: string
+  subtopics: string[]
+  estimated_hours: number | null
+  target_date: string | null
+  quiz_config: { question_count?: number; difficulty?: string } | null
+  order_index: number
+}
+
+export async function fetchCurricula(
+  token?: string | null,
+): Promise<CurriculumRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/curriculum`, {
+    headers: authHeaders(token),
+  })
+  return parseResponse<CurriculumRecord[]>(response)
+}
+
+export async function fetchCourseTopics(
+  courseId: string,
+  token?: string | null,
+): Promise<CourseTopic[]> {
+  const response = await fetch(`${API_BASE_URL}/curriculum/topics/${encodeURIComponent(courseId)}`, {
+    headers: authHeaders(token),
+  })
+  const data = await parseResponse<{ topics: CourseTopic[] }>(response)
+  return data.topics || []
+}
+
+export async function generateCurriculumPlan(
+  courseId: string,
+  selectedTopics: string[],
+  classDay?: string | null,
+  classStartTime?: string | null,
+  classEndTime?: string | null,
+  token?: string | null,
+): Promise<PlanItem[]> {
+  const body: Record<string, unknown> = {
+    course_id: courseId,
+    selected_topics: selectedTopics,
+  }
+  if (classDay) body.class_day = classDay
+  if (classStartTime) body.class_start_time = classStartTime
+  if (classEndTime) body.class_end_time = classEndTime
+
+  const response = await fetch(`${API_BASE_URL}/curriculum/plan`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  const data = await parseResponse<{ plan: PlanItem[] }>(response)
+  return (data.plan || []).map((item) => ({
+    ...item,
+    subtopics: Array.isArray(item.subtopics)
+      ? item.subtopics
+      : typeof item.subtopics === "string"
+        ? JSON.parse(item.subtopics)
+        : [],
+  }))
+}
+
+export async function createCurriculum(
+  courseId: string,
+  title: string,
+  planItems: PlanItem[],
+  classDay?: string | null,
+  classStartTime?: string | null,
+  classEndTime?: string | null,
+  token?: string | null,
+): Promise<CurriculumRecord> {
+  const body: Record<string, unknown> = {
+    course_id: courseId,
+    title,
+    plan_items: planItems,
+  }
+  if (classDay) body.class_day = classDay
+  if (classStartTime) body.class_start_time = classStartTime
+  if (classEndTime) body.class_end_time = classEndTime
+
+  const response = await fetch(`${API_BASE_URL}/curriculum`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+  return parseResponse<CurriculumRecord>(response)
+}
+
+export async function updateTopicStatus(
+  curriculumId: number,
+  topicId: number,
+  status: string,
+  token?: string | null,
+): Promise<CurriculumRecord> {
+  const response = await fetch(
+    `${API_BASE_URL}/curriculum/${curriculumId}/topics/${topicId}`,
+    {
+      method: "PATCH",
+      headers: authHeaders(token),
+      body: JSON.stringify({ status }),
+    },
+  )
+  return parseResponse<CurriculumRecord>(response)
+}
+
+export async function deleteCurriculum(
+  curriculumId: number,
+  token?: string | null,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/curriculum/${curriculumId}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  })
+  if (!response.ok) {
+    await parseResponse(response)
+  }
+}

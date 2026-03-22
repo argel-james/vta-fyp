@@ -28,6 +28,7 @@ class IndexStatus(BaseModel):
 def _run_indexing(course_id: str, settings: Settings) -> None:
     from rag_core.config import AzureSettings
     from rag_core.ingestion import build_faiss_index, load_all_documents, split_docs
+    from utils.blob_storage import upload_index
 
     data_dir = settings.data_dir / course_id
     index_dir = settings.index_dir / course_id
@@ -42,6 +43,9 @@ def _run_indexing(course_id: str, settings: Settings) -> None:
         chunks = split_docs(docs)
         build_faiss_index(chunks, index_dir, azure)
         logger.info("Indexing complete", extra={"course_id": course_id, "chunks": len(chunks)})
+
+        if upload_index(course_id):
+            logger.info("Index backed up to blob storage", extra={"course_id": course_id})
     except Exception:
         logger.exception("Indexing failed", extra={"course_id": course_id})
 

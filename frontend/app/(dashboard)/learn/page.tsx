@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
@@ -25,6 +26,8 @@ export default function LearnPage() {
   const { visualTheme } = useVisualTheme()
   const isPlayful = visualTheme === "playful"
 
+  const searchParams = useSearchParams()
+
   const [mode, setMode] = useState<LearnMode>("menu")
   const [courseId, setCourseId] = useState("sc2107")
   const [courses, setCourses] = useState<string[]>([])
@@ -48,6 +51,13 @@ export default function LearnPage() {
   const [summary, setSummary] = useState("")
   const [streak, setStreak] = useState(0)
   const [mascot] = useState(() => MASCOTS[Math.floor(Math.random() * MASCOTS.length)])
+
+  useEffect(() => {
+    const course = searchParams.get("course")
+    const t = searchParams.get("topic")
+    if (course) setCourseId(course)
+    if (t) setTopic(t)
+  }, [searchParams])
 
   useEffect(() => {
     fetchCourses(token).then(setCourses).catch(() => {})

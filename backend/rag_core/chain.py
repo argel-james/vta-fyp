@@ -105,8 +105,7 @@ def _format_docs(docs) -> str:
         src = d.metadata.get("source", "unknown")
         page = d.metadata.get("page")
         tag = Path(src).name + (f":p{page}" if page is not None else "")
-        content = d.page_content.replace("{", "{{").replace("}", "}}")
-        blocks.append(f"[{tag}]\n{content}")
+        blocks.append(f"[{tag}]\n{d.page_content}")
     return "\n\n".join(blocks)
 
 
@@ -162,22 +161,24 @@ def answer_question(
 
     system_prompt = _build_system_prompt(persona, learning_level)
 
-    lc_messages = [SystemMessage(content=system_prompt)]
+    messages: list[tuple[str, str]] = [("system", system_prompt)]
 
     if history:
         for msg in history[-6:]:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role == "user":
-                lc_messages.append(HumanMessage(content=content))
+                messages.append(("human", content))
             elif role == "assistant":
-                lc_messages.append(AIMessage(content=content))
+                messages.append(("ai", content))
 
-    lc_messages.append(HumanMessage(content=f"Context:\n{context}\n\nQuestion: {question}"))
+    messages.append(("human", f"Context:\n{context}\n\nQuestion: {question}"))
+
+    prompt = ChatPromptTemplate.from_messages(messages)
 
     if llm is not None:
-        result = llm.invoke(lc_messages)
-        text = result.content
+        pipeline = prompt | llm | StrOutputParser()
+        text = pipeline.invoke({})
     else:
         text = chain.invoke(question)
 

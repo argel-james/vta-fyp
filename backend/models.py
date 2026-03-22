@@ -1,10 +1,11 @@
-"""SQLAlchemy models for authentication, sessions, and analytics."""
+"""SQLAlchemy models for authentication, sessions, analytics, and curricula."""
 from __future__ import annotations
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Float, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from db import Base
 from settings import get_settings
@@ -88,3 +89,52 @@ class EventLog(Base):
     duration_seconds = Column(Float, nullable=True)
     detail = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))
+
+
+class Curriculum(Base):
+    __tablename__ = "curriculum"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), nullable=False, index=True)
+    course_id = Column(String(120), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    status = Column(
+        Enum("active", "completed", "archived", name="curriculum_status"),
+        default="active",
+    )
+    progress_percent = Column(Float, default=0.0)
+    class_day = Column(String(20), nullable=True)
+    class_start_time = Column(String(10), nullable=True)
+    class_end_time = Column(String(10), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))
+
+    topics = relationship(
+        "CurriculumTopic",
+        back_populates="curriculum",
+        cascade="all, delete-orphan",
+        order_by="CurriculumTopic.order_index",
+    )
+
+
+class CurriculumTopic(Base):
+    __tablename__ = "curriculum_topic"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    curriculum_id = Column(Integer, ForeignKey("curriculum.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_index = Column(Integer, nullable=False, default=0)
+    topic_name = Column(String(255), nullable=False)
+    item_type = Column(
+        Enum("study_session", "quiz", name="plan_item_type"),
+        default="study_session",
+    )
+    subtopics = Column(Text, nullable=True)
+    target_date = Column(String(30), nullable=True)
+    estimated_hours = Column(Float, nullable=True)
+    status = Column(
+        Enum("not_started", "in_progress", "completed", "skipped", name="topic_status"),
+        default="not_started",
+    )
+    quiz_config = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(tz))
+
+    curriculum = relationship("Curriculum", back_populates="topics")

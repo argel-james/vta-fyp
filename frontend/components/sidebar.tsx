@@ -15,6 +15,7 @@ const learningModes = [
   { icon: "💬", label: "Standard Chat", href: "/chat" },
   { icon: "🎭", label: "Personas", href: "/personas" },
   { icon: "🎮", label: "Learn & Play", href: "/learn" },
+  { icon: "📅", label: "Curriculum", href: "/curriculum" },
 ]
 
 const interactiveItems = [

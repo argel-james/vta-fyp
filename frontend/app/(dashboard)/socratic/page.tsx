@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
@@ -18,6 +19,8 @@ export default function SocraticPage() {
   const { visualTheme } = useVisualTheme()
   const isPlayful = visualTheme === "playful"
 
+  const searchParams = useSearchParams()
+
   const [courseId, setCourseId] = useState("sc2107")
   const [courses, setCourses] = useState<string[]>([])
   const [topic, setTopic] = useState("")
@@ -28,6 +31,13 @@ export default function SocraticPage() {
   const [progress, setProgress] = useState(0)
   const [started, setStarted] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const course = searchParams.get("course")
+    const t = searchParams.get("topic")
+    if (course) setCourseId(course)
+    if (t) setTopic(t)
+  }, [searchParams])
 
   useEffect(() => {
     fetchCourses(token).then(setCourses).catch(() => {})

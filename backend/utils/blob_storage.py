@@ -53,6 +53,32 @@ def upload_index(course_id: str) -> bool:
         return False
 
 
+def list_blob_courses() -> list[str]:
+    """List course IDs that have indexes stored in blob storage."""
+    if not _is_configured():
+        return []
+
+    try:
+        from azure.storage.blob import BlobServiceClient
+
+        settings = get_settings()
+        client = BlobServiceClient.from_connection_string(settings.blob_connection_str)
+        container = client.get_container_client(settings.blob_container)
+
+        if not container.exists():
+            return []
+
+        prefixes: set[str] = set()
+        for blob in container.list_blobs():
+            parts = blob.name.split("/", 1)
+            if len(parts) > 1:
+                prefixes.add(parts[0])
+        return sorted(prefixes)
+    except Exception:
+        logger.exception("Failed to list courses from blob storage")
+        return []
+
+
 def download_index(course_id: str) -> bool:
     """Download a FAISS index from Azure Blob Storage to local disk."""
     if not _is_configured():

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from db import init_db
-from routers import analytics, auth, content, documents, indexing, interactive, media, rag
+from routers import analytics, auth, content, curriculum, documents, indexing, interactive, media, rag
 from settings import get_settings
 
 load_dotenv()
@@ -60,6 +60,7 @@ app.include_router(content.router)
 app.include_router(analytics.router)
 app.include_router(media.router)
 app.include_router(interactive.router)
+app.include_router(curriculum.router)
 
 @app.get("/")
 async def root():
