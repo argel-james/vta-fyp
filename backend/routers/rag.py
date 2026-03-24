@@ -112,6 +112,67 @@ def _evict_course(course_id: str) -> bool:
     with _cache_lock:
         return _rag_cache.pop(course_id, None) is not None
     
+class EvalResponse(BaseModel):
+    answer: str
+    sources: List[dict]
+    chunks: List[dict]
+    course_id: str
+
+
+@router.post("/eval", response_model=EvalResponse)
+async def eval_question_endpoint(
+    request: QuestionRequest,
+    app_settings: Settings = Depends(get_app_settings),
+):
+    """Evaluation-only endpoint that returns raw retrieved chunks for manual scoring."""
+    try:
+        rag_components = _get_rag_components(request.course_id, app_settings)
+        azure_settings = get_azure_settings()
+
+        history_dicts = (
+            [{"role": m.role, "content": m.content} for m in request.history]
+            if request.history
+            else None
+        )
+
+        result = answer_question(
+            rag_components.chain,
+            rag_components.retriever,
+            request.question,
+            persona=request.persona,
+            learning_level=request.learning_level,
+            history=history_dicts,
+            settings=azure_settings,
+        )
+
+        sources = [
+            {"file": s.file, "page": s.page}
+            for s in result.sources
+        ] if result.sources else []
+
+        chunks = [
+            {
+                "content": c.content,
+                "file": c.file,
+                "page": c.page,
+                "metadata": c.metadata,
+            }
+            for c in result.chunks
+        ]
+
+        return EvalResponse(
+            answer=result.text,
+            sources=sources,
+            chunks=chunks,
+            course_id=request.course_id,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("RAG eval failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/ask", response_model=QuestionResponse)
 async def ask_question_endpoint(
     request: QuestionRequest,

@@ -9,7 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import AzureChatOpenAI
 
 from .config import AzureSettings
-from .schemas import Answer, Source
+from .schemas import Answer, ChunkDetail, Source
 
 _BASE_IDENTITY = (
     "You are a virtual teaching assistant for the GenAI Virtual Classroom. "
@@ -193,4 +193,15 @@ def answer_question(
         seen.add(key)
         sources.append(Source(file=Path(src).name, page=page))
 
-    return Answer(text=text, sources=sources)
+    chunks = [
+        ChunkDetail(
+            content=d.page_content,
+            file=Path(d.metadata.get("source", "unknown")).name,
+            page=d.metadata.get("page"),
+            metadata={k: v for k, v in d.metadata.items()
+                      if k not in ("source",)},
+        )
+        for d in docs
+    ]
+
+    return Answer(text=text, sources=sources, chunks=chunks)
