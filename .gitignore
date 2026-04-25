@@ -24,3 +24,7 @@ backend/data/
 
 # Evaluation output
 backend/eval_results/
+
+# Credential files (never commit)
+backend-appsettings.json
+set_backend_settings.py
